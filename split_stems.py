@@ -55,13 +55,13 @@ def separate_stems(input_folder, output_folder):
             stem_folder = os.path.join(output_folder, 'htdemucs', filename.split('.')[0])
             for stem_file in os.listdir(stem_folder):
                 stem_name = stem_file.split('.')[0]
-                new_name = f"{camelot_key}_{bpm}BPM_{filename.split('.')[0]}-{stem_name}.mp3"
+                new_name = f"{camelot_key}_{bpm:.2f}BPM_{filename.split('.')[0]}-{stem_name}.mp3"
                 os.rename(os.path.join(stem_folder, stem_file), os.path.join(stem_folder, new_name))
 
             print(f"Processed {filename}")
             
             # Delete the original file
-            os.remove(input_path)
+            # os.remove(input_path)
             print(f"Deleted original file: {filename}")
 
 if __name__ == "__main__":
