@@ -5,84 +5,27 @@ import librosa
 import numpy
 import soundfile as sf
 import pywt
-from scipy import signal
+import scipy
+from scipy import signal, stats
 import math
 
-def detect_bpm(y, sr):
+def detect_bpm(y, sr, start_bpm=None):
     print("Analyzing BPM...")
     
-    # Convert to mono and downsample if needed
+    # Convert to mono if needed
     if len(y.shape) > 1:
         y = y.mean(axis=1)
     
-    # Reduce audio length if it's too long (e.g., analyze first 60 seconds)
-    max_length = 60 * sr  # 60 seconds
-    if len(y) > max_length:
-        print("Using first 60 seconds for BPM detection...")
-        y = y[:max_length]
-    
-    levels = 4
-    max_decimation = 2 ** (levels - 1)
-    min_ndx = math.floor(60.0 / 220 * (sr / max_decimation))
-    max_ndx = math.floor(60.0 / 40 * (sr / max_decimation))
-    
-    cA = y
-    cD_sum = numpy.zeros(math.floor(len(y) / max_decimation + 1))
-    
-    for loop in range(0, levels):
-        print(f"Processing wavelet level {loop + 1}/{levels}...")
-        cA, cD = pywt.dwt(cA, "db4")
-        cD = signal.lfilter([0.01], [1 - 0.99], cD)
-        cD = abs(cD[:: (2 ** (levels - loop - 1))])
-        cD = cD - numpy.mean(cD)
-        cD_sum[:len(cD)] += cD
-    
-    print("Calculating final BPM...")
-    correl = numpy.correlate(cD_sum, cD_sum, "full")
-    midpoint = len(correl) // 2
-    correl_midpoint = correl[midpoint:]
-    peak_ndx = numpy.argmax(correl_midpoint[min_ndx:max_ndx]) + min_ndx
-    bpm = 60.0 / peak_ndx * (sr / max_decimation)
-    
-    return round(bpm, 2)
-
-def detect_first_onset(y, sr):
-    tempo = detect_bpm(y, sr)
-    beat_frames = librosa.beat.beat_track(y=y, sr=sr, start_bpm=tempo)[1]
-    
-    onset_env = librosa.onset.onset_strength(
-        y=y, 
+    # Use librosa's tempo detection with prior if provided
+    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+    tempo = librosa.beat.tempo(
+        onset_envelope=onset_env, 
         sr=sr,
-        hop_length=512,
-        aggregate=numpy.median
-    )
+        start_bpm=start_bpm if start_bpm else 120.0,
+        prior=None if start_bpm is None else scipy.stats.norm(loc=start_bpm, scale=1.0)
+    )[0]
     
-    onset_frames = librosa.onset.onset_detect(
-        onset_envelope=onset_env,
-        sr=sr,
-        hop_length=512,
-        backtrack=True
-    )
-    
-    if len(onset_frames) > 0 and len(beat_frames) > 0:
-        for onset in onset_frames:
-            if any(abs(onset - beat) < 2 for beat in beat_frames):
-                first_onset_time = librosa.frames_to_time(onset, sr=sr)
-                buffer_time = 0.05
-                return max(0, first_onset_time - buffer_time)
-    
-    if len(onset_frames) > 0:
-        return librosa.frames_to_time(onset_frames[0], sr=sr)
-    return 0
-
-def trim_audio(file_path):
-    y, sr = librosa.load(file_path)
-    first_onset = detect_first_onset(y, sr)
-    start_sample = int(first_onset * sr)
-    y_trimmed = y[start_sample:]
-    trimmed_path = file_path.rsplit('.', 1)[0] + '_trimmed.' + file_path.rsplit('.', 1)[1]
-    sf.write(trimmed_path, y_trimmed, sr)
-    return trimmed_path
+    return round(tempo, 2)
 
 def detect_bpm_and_key(file_path):
     y, sr = librosa.load(file_path)
@@ -111,30 +54,143 @@ def convert_to_camelot(key, scale):
     key_name = f"{key} {scale}" if scale == 'minor' else key
     return camelot_wheel.get(key_name, 'Unknown')
 
+def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
+    """
+    Further separates a drum stem into its component parts using drumsep model.
+    """
+    # Ensure we have absolute paths
+    drum_stem_path = os.path.abspath(drum_stem_path)
+    output_folder = os.path.abspath(output_folder)
+    
+    # Create a temporary directory for drum parts
+    drums_output = os.path.join(output_folder, 'drum_parts_temp')
+    os.makedirs(drums_output, exist_ok=True)
+    
+    # Get absolute path to the drumsep directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    drumsep_dir = os.path.join(current_dir, 'drumsep')
+    drumsep_script = os.path.join(drumsep_dir, 'drumsep')
+    
+    # Make sure script is executable
+    os.chmod(drumsep_script, 0o755)
+    
+    # Store original directory and change to drumsep directory
+    original_dir = os.getcwd()
+    os.chdir(drumsep_dir)
+    
+    print(f"Processing drum stem: {drum_stem_path}")
+    print(f"Temporary output directory: {drums_output}")
+    
+    try:
+        # Verify the drum stem exists before processing
+        if not os.path.exists(drum_stem_path):
+            print(f"Error: Drum stem file not found at {drum_stem_path}")
+            return
+            
+        # Run the separation
+        subprocess.run([
+            'bash',
+            drumsep_script,
+            drum_stem_path,
+            drums_output
+        ], check=True)
+        
+        # Get the directory where the original drum stem is located
+        target_folder = os.path.dirname(drum_stem_path)
+        
+        # Process the separated drum parts
+        model_output_folder = os.path.join(drums_output, '49469ca8')
+        drum_parts_folder = os.path.join(model_output_folder, os.path.splitext(os.path.basename(drum_stem_path))[0])
+        
+        # Define name translations
+        drum_name_translations = {
+            'bombo': 'kick',
+            'redoblante': 'snare',
+            'platillos': 'cymbals',
+            'toms': 'toms'
+        }
+        
+        if os.path.exists(drum_parts_folder):
+            for drum_part in os.listdir(drum_parts_folder):
+                if drum_part.endswith('.mp3') or drum_part.endswith('.wav'):
+                    part_name = os.path.splitext(drum_part)[0]
+                    # Translate the drum part name
+                    for spanish, english in drum_name_translations.items():
+                        if spanish in part_name.lower():
+                            part_name = english
+                            break
+                    
+                    new_part_name = f"{camelot_key}_{bpm:.2f}BPM_{base_name}-drums-{part_name}.mp3"
+                    
+                    # Move file directly to target folder
+                    os.rename(
+                        os.path.join(drum_parts_folder, drum_part),
+                        os.path.join(target_folder, new_part_name)
+                    )
+            
+            # Clean up temporary folders
+            os.rmdir(drum_parts_folder)
+            os.rmdir(model_output_folder)
+            os.rmdir(drums_output)
+            
+    except subprocess.CalledProcessError as e:
+        print(f"Error running drumsep: {e}")
+    except Exception as e:
+        print(f"Error processing drum parts: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        # Always change back to original directory
+        os.chdir(original_dir)
+
 def separate_stems(input_folder, output_folder):
     os.makedirs(output_folder, exist_ok=True)
 
     for filename in os.listdir(input_folder):
         if filename.endswith('.mp3') or filename.endswith('.wav'):
             input_path = os.path.join(input_folder, filename)
-            camelot_key, bpm = detect_bpm_and_key(input_path)
-            trimmed_path = trim_audio(input_path)
-            subprocess.run(['demucs', trimmed_path, '-o', output_folder, '--mp3'])
             
+            # Step 1: Analyze original song ONCE
+            camelot_key, bpm = detect_bpm_and_key(input_path)
             base_name = filename.split('.')[0]
-            stem_folder = os.path.join(output_folder, 'htdemucs', base_name + '_trimmed')
-            for stem_file in os.listdir(stem_folder):
-                stem_name = stem_file.split('.')[0]
-                new_name = f"{camelot_key}_{bpm:.2f}BPM_{base_name}-{stem_name}.mp3"
-                os.rename(os.path.join(stem_folder, stem_file), 
-                         os.path.join(stem_folder, new_name))
+            print(f"Separating stems for {filename}...")
+            
+            try:
+                # Step 2: Initial stem separation
+                subprocess.run(
+                    ['demucs', input_path, '-o', output_folder, '--mp3'],
+                    check=True
+                )
+                
+                stem_folder = os.path.join(output_folder, 'htdemucs', base_name)
+                if not os.path.exists(stem_folder):
+                    print(f"Error: Stem folder not created for {filename}")
+                    continue
+                
+                # Step 3: Rename all stems with consistent naming
+                drum_stem_path = None
+                for stem_file in os.listdir(stem_folder):
+                    stem_name = stem_file.split('.')[0]
+                    new_name = f"{camelot_key}_{bpm:.2f}BPM_{base_name}-{stem_name}.mp3"
+                    full_stem_path = os.path.join(stem_folder, stem_file)
+                    new_stem_path = os.path.join(stem_folder, new_name)
+                    os.rename(full_stem_path, new_stem_path)
+                    
+                    # Store drum stem path for later processing
+                    if "drums" in stem_name.lower():
+                        drum_stem_path = new_stem_path
 
-            print(f"Processed {filename}")
-            os.remove(input_path)
-            os.remove(trimmed_path)
-            print(f"Deleted original and trimmed files")
+                # Step 4: Process drums separately if found
+                if drum_stem_path:
+                    separate_drums(drum_stem_path, stem_folder, camelot_key, bpm, base_name)
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error processing {filename}: {e}")
+            except Exception as e:
+                print(f"Unexpected error processing {filename}: {e}")
+            print(f"Successfully processed {filename}")
 
 if __name__ == "__main__":
-    input_folder = os.path.dirname(os.path.abspath(__file__))
-    output_folder = os.path.join(input_folder, 'output')
+    input_folder = "."
+    output_folder = "output"
     separate_stems(input_folder, output_folder)
