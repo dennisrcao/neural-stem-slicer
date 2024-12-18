@@ -9,48 +9,47 @@ class AudioProcessingGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Audio Analysis")
+        
+        # Initialize variables
+        self.file_path = tk.StringVar()
+        self.key_labels = [tk.StringVar() for _ in range(2)]  # Array for multiple key estimates
+        self.detected_key = tk.StringVar()
+        self.key_override = tk.StringVar()
+        self.detected_bpm = tk.StringVar()
+        self.bpm_override = tk.StringVar()
+        
         self.setup_gui()
         print("GUI initialized and ready")
 
     def setup_gui(self):
-        # Create main frame
-        frame = ttk.Frame(self.root, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Initialize variables
-        self.file_path = tk.StringVar()
-        self.detected_bpm = tk.StringVar(value="---")
-        self.detected_key = tk.StringVar(value="---")
-        self.bpm_override = tk.StringVar()
-        self.key_override = tk.StringVar()
-        
-        # Create widgets
-        ttk.Button(frame, text="Select File", command=self.browse_file).grid(row=0, column=0, columnspan=2, pady=5)
-        
-        ttk.Label(frame, text="Detected BPM:").grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Label(frame, textvariable=self.detected_bpm).grid(row=1, column=1, sticky=tk.W, pady=2)
-        
-        ttk.Label(frame, text="Override BPM:").grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(frame, textvariable=self.bpm_override).grid(row=2, column=1, sticky=tk.W, pady=2)
-        
-        # Create key detection results frame
-        key_frame = ttk.LabelFrame(frame, text="Detected Keys", padding="5")
-        key_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
-        self.key_labels = []
+        # File Selection
+        ttk.Label(self.root, text="Selected File:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(self.root, textvariable=self.file_path).grid(row=0, column=1, columnspan=2, sticky="w", padx=5, pady=5)
+        ttk.Button(self.root, text="Browse", command=self.browse_file).grid(row=0, column=3, padx=5, pady=5)
+
+        # Key Detection Results
+        ttk.Label(self.root, text="Detected Keys:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         for i in range(2):
-            var = tk.StringVar(value="---")
-            label = ttk.Label(key_frame, textvariable=var)
-            label.grid(row=i, column=0, sticky=tk.W)
-            self.key_labels.append(var)
-        
-        ttk.Label(frame, text="Override Key:").grid(row=4, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(frame, textvariable=self.key_override).grid(row=4, column=1, sticky=tk.W, pady=2)
-        
-        ttk.Button(frame, text="Process", command=self.start_processing).grid(row=5, column=0, columnspan=2, pady=10)
-        
-        self.status_label = ttk.Label(frame, text="")
-        self.status_label.grid(row=6, column=0, columnspan=2)
+            ttk.Label(self.root, textvariable=self.key_labels[i]).grid(row=1+i, column=1, columnspan=2, sticky="w", padx=5)
+
+        # Key Override
+        ttk.Label(self.root, text="Override Key:").grid(row=3, column=0, sticky="w", padx=5, pady=5)
+        ttk.Entry(self.root, textvariable=self.key_override).grid(row=3, column=1, sticky="w", padx=5, pady=5)
+
+        # BPM Detection
+        ttk.Label(self.root, text="Detected BPM:").grid(row=4, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(self.root, textvariable=self.detected_bpm).grid(row=4, column=1, sticky="w", padx=5, pady=5)
+
+        # BPM Override
+        ttk.Label(self.root, text="Override BPM:").grid(row=5, column=0, sticky="w", padx=5, pady=5)
+        ttk.Entry(self.root, textvariable=self.bpm_override).grid(row=5, column=1, sticky="w", padx=5, pady=5)
+
+        # Process Button
+        ttk.Button(self.root, text="Process", command=self.start_processing).grid(row=6, column=0, columnspan=4, pady=20)
+
+        # Status Label
+        self.status_label = ttk.Label(self.root, text="")
+        self.status_label.grid(row=7, column=0, columnspan=4, pady=5)
 
     def browse_file(self):
         filename = filedialog.askopenfilename(
@@ -63,9 +62,12 @@ class AudioProcessingGUI:
             # Get key estimates (now returns top 2)
             key_results = detect_key(filename)
             
-            # Update GUI with top 2 keys
+            # Update GUI with key results
             for i, (camelot, full_key, confidence) in enumerate(key_results):
-                self.key_labels[i].set(f"{camelot} - {full_key} ({confidence:.1%})")
+                if confidence is not None:
+                    self.key_labels[i].set(f"{camelot} - {full_key} ({confidence:.1f}%)")
+                else:
+                    self.key_labels[i].set(f"{camelot} - {full_key}")
             
             # Use the highest confidence key as the default
             self.detected_key.set(f"{key_results[0][0]} - {key_results[0][1]}")

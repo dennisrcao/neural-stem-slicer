@@ -14,10 +14,10 @@ def detect_key(file_path):
     key_estimates = [(
         str(tonal_data[4]),      # key
         str(tonal_data[5]),      # scale
-        float(np.mean(tonal_data[6])) # confidence - take mean of array
+        float(np.mean(tonal_data[6]))  # confidence - take mean of array
     )]
     
-    # Also get alternative keys using KeyExtractor
+    # Also get alternative key using KeyExtractor
     key_extractor = es.KeyExtractor()
     key_data = key_extractor(audio)
     key_estimates.append((
@@ -26,51 +26,53 @@ def detect_key(file_path):
         float(key_data[2])       # confidence
     ))
     
-    # Now sorting will work with Python native types
+    # Sort by confidence score
     key_estimates.sort(key=lambda x: x[2], reverse=True)
     
-    # Convert top 2 keys to Camelot notation (we only have 2 estimates)
+    # Convert top 2 keys to Camelot notation
     results = []
-    for key, scale, confidence in key_estimates:
-        camelot_key, full_key = convert_to_camelot(key, scale)
-        results.append((camelot_key, full_key, confidence))
-        print(f"Possible key: {full_key} ({camelot_key}) - {confidence:.2%} confidence")
-    
-    # If we need exactly 3 results, duplicate the highest confidence one
-    while len(results) < 3:
-        results.append(results[0])
+    for key, scale, confidence in key_estimates[:2]:
+        if scale == 'major':
+            camelot, full_key = major_wheel.get(key, ('Unknown', f'{key} major'))
+        else:  # minor
+            camelot, full_key = minor_wheel.get(key, ('Unknown', f'{key} minor'))
+            
+        if camelot != 'Unknown':
+            results.append((camelot, full_key, confidence * 100))
+        else:
+            results.append((camelot, full_key, None))
+            
+        print(f"Possible key: {full_key} ({camelot}) - {confidence*100:.2f}% confidence")
     
     return results
 
-def convert_to_camelot(key, scale):
-    # Outer ring (Major keys - B notation)
-    major_wheel = {
-        'B': ('1B', 'B major'),   'F#': ('2B', 'F# major'),  'Db': ('3B', 'Db major'),
-        'Ab': ('4B', 'Ab major'), 'Eb': ('5B', 'Eb major'),  'Bb': ('6B', 'Bb major'),
-        'F': ('7B', 'F major'),   'C': ('8B', 'C major'),    'G': ('9B', 'G major'),
-        'D': ('10B', 'D major'),  'A': ('11B', 'A major'),   'E': ('12B', 'E major'),
-        # Alternative notations
-        'C#': ('3B', 'Db major'), 'Gb': ('2B', 'F# major'),  'D#': ('5B', 'Eb major'),
-        'G#': ('4B', 'Ab major'), 'A#': ('6B', 'Bb major')
-    }
-    
-    # Inner ring (Minor keys - A notation)
-    minor_wheel = {
-        'G#': ('1A', 'G# minor'), 'D#': ('2A', 'D# minor'), 'Bb': ('3A', 'Bb minor'),
-        'F': ('4A', 'F minor'),   'C': ('5A', 'C minor'),   'G': ('6A', 'G minor'),
-        'D': ('7A', 'D minor'),   'A': ('8A', 'A minor'),   'E': ('9A', 'E minor'),
-        'B': ('10A', 'B minor'),  'F#': ('11A', 'F# minor'),'C#': ('12A', 'C# minor'),
-        # Alternative notations
-        'Ab': ('1A', 'G# minor'), 'Eb': ('2A', 'D# minor'), 'A#': ('3A', 'Bb minor'),
-        'Gb': ('11A', 'F# minor')
-    }
-    
-    if scale == 'major':
-        return major_wheel.get(key, ('Unknown', f'{key} major'))
-    else:  # minor
-        return minor_wheel.get(key, ('Unknown', f'{key} minor')) 
+def update_gui_labels(key_results):
+    labels = []
+    for camelot, full_key, confidence in key_results:
+        if confidence is not None:
+            label = f"{camelot} - {full_key} ({confidence:.1f}% confidence)"
+        else:
+            label = f"{camelot} - {full_key}"
+        labels.append(label)
+    return labels
 
-def update_gui_labels(detected_key, detected_key_confidence):
-    # Only display the final key determination
-    key_text = f"{detected_key} - {detected_key_confidence:.2f}% confidence"
-    return key_text
+# Outer ring (Major keys - B notation)
+major_wheel = {
+    'C': ('8B', 'C major'),   'G': ('7B', 'G major'),   'D': ('6B', 'D major'),
+    'A': ('5B', 'A major'),   'E': ('4B', 'E major'),   'B': ('3B', 'B major'),
+    'F#': ('2B', 'F# major'), 'C#': ('1B', 'C# major'), 'Ab': ('12B', 'Ab major'),
+    'Eb': ('11B', 'Eb major'),'Bb': ('10B', 'Bb major'),'F': ('9B', 'F major'),
+    # Alternative notations
+    'Gb': ('2B', 'F# major'), 'Db': ('1B', 'C# major'), 'G#': ('12B', 'Ab major'),
+    'A#': ('10B', 'Bb major')
+}
+
+# Inner ring (Minor keys - A notation)
+minor_wheel = {
+    'Am': ('8A', 'A minor'),   'Em': ('7A', 'E minor'),   'Bm': ('6A', 'B minor'),
+    'F#m': ('5A', 'F# minor'), 'C#m': ('4A', 'C# minor'), 'G#m': ('3A', 'G# minor'),
+    'D#m': ('2A', 'D# minor'), 'A#m': ('1A', 'A# minor'), 'Fm': ('12A', 'F minor'),
+    'Cm': ('11A', 'C minor'),  'Gm': ('10A', 'G minor'),  'Dm': ('9A', 'D minor'),
+    # Alternative notations
+    'Ebm': ('2A', 'D# minor'), 'Bbm': ('1A', 'A# minor'), 'Abm': ('3A', 'G# minor')
+}
