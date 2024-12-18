@@ -8,6 +8,9 @@ import pywt
 import scipy
 from scipy import signal, stats
 import math
+import shutil
+import tkinter as tk
+from tkinter import ttk, filedialog
 
 def detect_bpm(y, sr, start_bpm=None):
     print("Analyzing BPM...")
@@ -143,12 +146,84 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         # Always change back to original directory
         os.chdir(original_dir)
 
+def separate_other(other_stem_path, output_folder, camelot_key, bpm, base_name):
+    """
+    Further separates the 'other' stem into instrumental components using synthsep
+    """
+    other_stem_path = os.path.abspath(other_stem_path)
+    output_folder = os.path.abspath(output_folder)
+    
+    # Get absolute path to the synthsep directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    synthsep_dir = os.path.join(current_dir, 'synthsep')
+    synthsep_script = os.path.join(synthsep_dir, 'synthsep')
+    
+    # Make sure script is executable
+    os.chmod(synthsep_script, 0o755)
+    
+    # Store original directory and change to synthsep directory
+    original_dir = os.getcwd()
+    os.chdir(synthsep_dir)
+    
+    try:
+        # Create temporary output directory
+        other_output = os.path.join(output_folder, 'synth_parts_temp')
+        os.makedirs(other_output, exist_ok=True)
+        
+        # Verify the other stem exists before processing
+        if not os.path.exists(other_stem_path):
+            print(f"Error: Other stem file not found at {other_stem_path}")
+            return
+            
+        # Run the separation
+        subprocess.run([
+            'bash',
+            synthsep_script,
+            other_stem_path,
+            other_output
+        ], check=True)
+        
+        # Get the directory where the original other stem is located
+        target_folder = os.path.dirname(other_stem_path)
+        
+        # Process and rename the separated parts
+        # Note: Update these paths based on your synthsep output structure
+        for component in ['piano', 'synth']:
+            output_name = f"{camelot_key}_{bpm:.2f}BPM_{base_name}-other-{component}.mp3"
+            # Update this path based on your synthsep output structure
+            component_path = os.path.join(other_output, component + '.mp3')
+            if os.path.exists(component_path):
+                os.rename(
+                    component_path,
+                    os.path.join(target_folder, output_name)
+                )
+        
+        # Clean up
+        shutil.rmtree(other_output)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error running synthsep: {e}")
+    except Exception as e:
+        print(f"Error processing other parts: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        # Always change back to original directory
+        os.chdir(original_dir)
+
 def separate_stems(input_folder, output_folder):
     os.makedirs(output_folder, exist_ok=True)
 
     for filename in os.listdir(input_folder):
-        if filename.endswith('.mp3') or filename.endswith('.wav'):
+        if filename.endswith(('.mp3', '.wav', '.m4a')):
             input_path = os.path.join(input_folder, filename)
+            
+            # Convert m4a to wav if needed
+            if filename.endswith('.m4a'):
+                print(f"Converting {filename} from m4a to wav...")
+                wav_path = os.path.join(input_folder, f"{os.path.splitext(filename)[0]}.wav")
+                subprocess.run(['ffmpeg', '-i', input_path, wav_path], check=True)
+                input_path = wav_path  # Use the converted wav file
             
             # Step 1: Analyze original song ONCE
             camelot_key, bpm = detect_bpm_and_key(input_path)
@@ -167,8 +242,12 @@ def separate_stems(input_folder, output_folder):
                     print(f"Error: Stem folder not created for {filename}")
                     continue
                 
+                # Debugging: List files in the stem folder
+                print(f"Files in stem folder: {os.listdir(stem_folder)}")
+                
                 # Step 3: Rename all stems with consistent naming
                 drum_stem_path = None
+                other_stem_path = None
                 for stem_file in os.listdir(stem_folder):
                     stem_name = stem_file.split('.')[0]
                     new_name = f"{camelot_key}_{bpm:.2f}BPM_{base_name}-{stem_name}.mp3"
@@ -176,21 +255,97 @@ def separate_stems(input_folder, output_folder):
                     new_stem_path = os.path.join(stem_folder, new_name)
                     os.rename(full_stem_path, new_stem_path)
                     
-                    # Store drum stem path for later processing
+                    # Store paths for further processing
                     if "drums" in stem_name.lower():
                         drum_stem_path = new_stem_path
+                    elif "other" in stem_name.lower():
+                        other_stem_path = new_stem_path
 
                 # Step 4: Process drums separately if found
                 if drum_stem_path:
                     separate_drums(drum_stem_path, stem_folder, camelot_key, bpm, base_name)
+                
+                # Step 5: Process other stem if found
+                # if other_stem_path:
+                    # separate_other(other_stem_path, stem_folder, camelot_key, bpm, base_name)
+
+                # Clean up temporary wav file if we converted from m4a
+                if filename.endswith('.m4a') and os.path.exists(wav_path):
+                    os.remove(wav_path)
 
             except subprocess.CalledProcessError as e:
                 print(f"Error processing {filename}: {e}")
             except Exception as e:
                 print(f"Unexpected error processing {filename}: {e}")
+                import traceback
+                traceback.print_exc()
             print(f"Successfully processed {filename}")
 
+def gui_process_file():
+    # Create the main window
+    root = tk.Tk()
+    root.title("Audio Analysis")
+    
+    # Create and configure main frame
+    frame = ttk.Frame(root, padding="10")
+    frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+    
+    # File selection variables and widgets
+    file_path = tk.StringVar()
+    detected_bpm = tk.StringVar(value="---")
+    detected_key = tk.StringVar(value="---")
+    bpm_override = tk.StringVar()
+    key_override = tk.StringVar()
+    
+    def browse_file():
+        filename = filedialog.askopenfilename(
+            filetypes=[("Audio Files", "*.mp3 *.wav *.m4a *.flac")]
+        )
+        if filename:
+            file_path.set(filename)
+            # Analyze the selected file
+            key, bpm = detect_bpm_and_key(filename)
+            detected_bpm.set(f"{bpm}")
+            detected_key.set(key)
+    
+    def start_processing():
+        input_file = file_path.get()
+        if not input_file:
+            status_label.config(text="Please select a file first")
+            return
+            
+        # Use override values if provided
+        final_bpm = bpm_override.get() if bpm_override.get() else detected_bpm.get()
+        final_key = key_override.get() if key_override.get() else detected_key.get()
+        
+        # Process with the final values
+        input_folder = os.path.dirname(input_file)
+        output_folder = os.path.join(input_folder, "output")
+        separate_stems(input_folder, output_folder)
+        status_label.config(text="Processing complete!")
+        root.destroy()  # Close the window after processing
+    
+    # Create widgets
+    ttk.Button(frame, text="Select File", command=browse_file).grid(row=0, column=0, columnspan=2, pady=5)
+    
+    ttk.Label(frame, text="Detected BPM:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(frame, textvariable=detected_bpm).grid(row=1, column=1, sticky=tk.W, pady=2)
+    
+    ttk.Label(frame, text="Override BPM:").grid(row=2, column=0, sticky=tk.W, pady=2)
+    ttk.Entry(frame, textvariable=bpm_override).grid(row=2, column=1, sticky=tk.W, pady=2)
+    
+    ttk.Label(frame, text="Detected Key:").grid(row=3, column=0, sticky=tk.W, pady=2)
+    ttk.Label(frame, textvariable=detected_key).grid(row=3, column=1, sticky=tk.W, pady=2)
+    
+    ttk.Label(frame, text="Override Key:").grid(row=4, column=0, sticky=tk.W, pady=2)
+    ttk.Entry(frame, textvariable=key_override).grid(row=4, column=1, sticky=tk.W, pady=2)
+    
+    ttk.Button(frame, text="Process", command=start_processing).grid(row=5, column=0, columnspan=2, pady=10)
+    
+    status_label = ttk.Label(frame, text="")
+    status_label.grid(row=6, column=0, columnspan=2)
+    
+    root.mainloop()
+
 if __name__ == "__main__":
-    input_folder = "."
-    output_folder = "output"
-    separate_stems(input_folder, output_folder)
+    gui_process_file()  # Replace the direct separate_stems() call with the GUI

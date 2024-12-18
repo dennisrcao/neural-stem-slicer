@@ -10,3 +10,4 @@ basic-pitch[tf,onnx]
 pretty_midi
 scikit-learn==1.5.1
 diffq
+ffmpeg-python

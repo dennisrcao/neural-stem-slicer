@@ -1,0 +1,29 @@
+#!/bin/bash
+if [ $# -ne 0 ]; then
+    exit 1
+fi
+
+# Check if ffmpeg is installed
+if ! command -v ffmpeg &> /dev/null; then
+    echo "Installing ffmpeg..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        brew install ffmpeg
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+    fi
+fi
+
+# Ensure demucs is installed with the 6-stem model
+if [ "$(pip list | grep -F demucs)" == "" ]; then
+    pip install demucs
+fi
+
+# Install ffmpeg-python
+pip install ffmpeg-python
+
+# Download the 6-stem model if needed
+python -c "from demucs.pretrained import get_model; get_model('htdemucs_6s')"
+
+exit 0

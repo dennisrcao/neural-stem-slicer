@@ -1,0 +1,32 @@
+#!/bin/bash
+if [ $# -ne 2 ]; then
+    exit 1
+fi
+input="$1"
+output="$2"
+shopt -s nullglob
+
+# Use absolute paths
+input=$(realpath "$input")
+output=$(realpath "$output")
+
+# If input is m4a, convert to wav first
+if [[ $input == *.m4a ]]; then
+    wav_path="${input%.*}.wav"
+    ffmpeg -i "$input" "$wav_path"
+    input="$wav_path"
+fi
+
+# Run DEMUCS with 6-stem model for better synth separation
+demucs --two-stems=other \
+       -n htdemucs_6s \
+       --mp3 \
+       -o "$output" \
+       "$input"
+
+# Clean up temporary wav file if we converted from m4a
+if [[ -f "${input%.*}.wav" ]]; then
+    rm "${input%.*}.wav"
+fi
+
+exit 0
