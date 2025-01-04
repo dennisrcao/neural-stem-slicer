@@ -5,6 +5,13 @@ from step1_BPMAnalysis import load_and_analyze_bpm
 from step2_KeyAnalysis import detect_key
 from step4_StemSeperation import separate_stems
 
+try:
+    from src.deeprhythm.model.infer import predict_global_bpm
+except ImportError as e:
+    print("Error: DeepRhythm dependencies not properly installed")
+    print(f"Details: {e}")
+    from step1_BPMAnalysis import load_and_analyze_bpm  # Fallback to librosa
+
 class AudioProcessingGUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -72,7 +79,11 @@ class AudioProcessingGUI:
             # Use the highest confidence key as the default
             self.detected_key.set(f"{key_results[0][0]} - {key_results[0][1]}")
             
-            bpm = load_and_analyze_bpm(filename)
+            try:
+                bpm, _ = predict_global_bpm(filename)
+            except Exception as e:
+                print(f"DeepRhythm error: {e}, falling back to librosa")
+                bpm = load_and_analyze_bpm(filename)
             self.detected_bpm.set(f"{bpm}")
             print("Analysis complete")
 
