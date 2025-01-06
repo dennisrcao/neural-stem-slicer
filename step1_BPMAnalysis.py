@@ -33,25 +33,11 @@ def detect_bpm(y, sr, file_path, start_bpm=None):
 
 def load_and_analyze_bpm(file_path, manual_bpm=None):
     """
-    Load audio file, analyze its BPM, and create a copy with BPM prefix in output folder
+    Load audio file and analyze its BPM
     """
     if manual_bpm is not None:
-        bpm = manual_bpm
-    else:
-        y, sr = librosa.load(file_path)
-        bpm, _ = detect_bpm(y, sr, file_path)
+        return manual_bpm
     
-    # Create output directory if it doesn't exist
-    directory = os.path.dirname(file_path)
-    output_dir = os.path.join(directory, 'output')
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Create copy with BPM prefix in output folder
-    filename = os.path.basename(file_path)
-    new_filename = f"{bpm:.2f}BPM_{filename}"
-    new_path = os.path.join(output_dir, new_filename)
-    
-    shutil.copy2(file_path, new_path)
-    print(f"Created file with BPM prefix: {new_filename}")
-    
+    y, sr = librosa.load(file_path)
+    bpm, confidence = detect_bpm(y, sr, file_path)
     return bpm
