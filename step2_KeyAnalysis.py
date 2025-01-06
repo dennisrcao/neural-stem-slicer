@@ -22,10 +22,14 @@ def detect_key(file_path):
     # Get top 2 keys
     key_indexes = np.argsort(key_correlations)[-2:][::-1]
     
+    # Normalize just against the top few correlations instead of all 24
+    top_n_correlations = np.sort(key_correlations)[-5:]  # Use top 5 correlations
+    normalized_confidence = key_correlations[key_indexes[0]] / np.sum(top_n_correlations) * 100
+    
     results = []
     for idx in key_indexes:
         key_name = get_key_name(idx)
-        confidence = key_correlations[idx] / np.sum(key_correlations) * 100
+        confidence = key_correlations[idx] / np.sum(top_n_correlations) * 100  # Use new normalization
         
         # Convert to Camelot notation
         if idx < 12:  # Major keys
@@ -107,10 +111,10 @@ major_wheel = {
 
 # Inner ring (Minor keys - A notation)
 minor_wheel = {
-    'Am': ('8A', 'A minor'),   'Em': ('7A', 'E minor'),   'Bm': ('6A', 'B minor'),
-    'F#m': ('5A', 'F# minor'), 'C#m': ('4A', 'C# minor'), 'G#m': ('3A', 'G# minor'),
-    'D#m': ('2A', 'D# minor'), 'A#m': ('1A', 'A# minor'), 'Fm': ('12A', 'F minor'),
-    'Cm': ('11A', 'C minor'),  'Gm': ('10A', 'G minor'),  'Dm': ('9A', 'D minor'),
+    'Am': ('8A', 'A minor'),   'Em': ('9A', 'E minor'),   'Bm': ('10A', 'B minor'),
+    'F#m': ('11A', 'F# minor'), 'C#m': ('12A', 'C# minor'), 'G#m': ('1A', 'G# minor'),
+    'D#m': ('2A', 'D# minor'), 'A#m': ('3A', 'A# minor'), 'Fm': ('4A', 'F minor'),
+    'Cm': ('5A', 'C minor'),  'Gm': ('6A', 'G minor'),  'Dm': ('7A', 'D minor'),
     # Alternative notations
-    'Ebm': ('2A', 'D# minor'), 'Bbm': ('1A', 'A# minor'), 'Abm': ('3A', 'G# minor')
+    'Ebm': ('2A', 'D# minor'), 'Bbm': ('3A', 'A# minor'), 'Abm': ('1A', 'G# minor')
 }

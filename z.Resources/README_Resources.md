@@ -1,0 +1,1 @@
+mixxx has very good BPM detection 
