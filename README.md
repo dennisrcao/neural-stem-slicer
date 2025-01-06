@@ -1,25 +1,58 @@
-# TO ADD: 
-- naming convention change to - "Key - Title - BPM " 
-- ✓ Drum Demux to kick, snare, cymbal, toms
-- ✓ Synth separation from "other" stem
-- [gonna use neuralnote] add midi layer parallel to the melody 
-- make executable for drag and drop or double click
+# Installation
 
+### Prerequisites
+- Python 3.11 (recommended) or Python 3.8-3.11
+- macOS (including Apple Silicon), Linux, or Windows
 
-#Installation
+### Step 1: Install Python 3.11
+```bash
+brew install python@3.11
+```
 
-`deactivate`
-`rm -rf .venv`
-`python -m venv .venv`
-`source .venv/bin/activate`  # On macOS/Linux
-`pip install -r requirements.txt`
+Verify the installation:
+```bash
+python3.11 --version  # Should show Python 3.11.x
+```
 
-`cd drumsep
+### Step 2: Set Up Virtual Environment
+```bash
+# Create virtual environment
+python3.11 -m venv .venv
+
+# Activate virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# OR
+.venv\Scripts\activate  # On Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 3: Install Model Components
+```bash
+# Install drum separator
+cd drumsep
 bash drumsepInstall
-cd ..`
 
-`cd synthsep
+# Install synth separator
+cd ../synthsep
 bash synthsepInstall
-cd ..`
+```
 
-`python split_stems.py`
+### Step 4: Run the Splitter
+```bash
+python split_stems.py
+```
+
+### Troubleshooting
+If you need to recreate the virtual environment:
+```bash
+deactivate
+rm -rf .venv
+python3.11 -m venv .venv
+source .venv/bin/activate  # On macOS/Linux
+pip install -r requirements.txt
+```
+
+### Algorithm
+Based on [DeepRhythm](https://github.com/bleugreen/deeprhythm)

@@ -1,6 +1,28 @@
-.venv/
+# Python
 __pycache__/
-.DS_Store
+*.py[cod]
+*$py.class
+.Python
+*.so
+.env
+.venv
+venv/
+ENV/
+
+# Project specific
+data/
+experiments/
+*.hdf5
+*.json
+model_weights/
+dist/
+*.whl
+*.tar.gz
+*.csv
+*.pb
+.workspace
 output/
 *.mp3
 *.wav
+*.m4a
+.DS_Store
