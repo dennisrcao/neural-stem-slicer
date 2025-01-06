@@ -26,3 +26,7 @@ output/
 *.wav
 *.m4a
 .DS_Store
+
+
+# Ignore reference repositories
+z.Resources/mixxx/
