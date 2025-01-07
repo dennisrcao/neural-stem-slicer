@@ -1,3 +1,5 @@
+from step3_1_StemSeperation import separate_stems
+import tqdm
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -27,14 +29,14 @@ class AudioAnalysisGUI:
         # Find audio files in current directory
         self.scan_directory()
         self.setup_gui()
-        
+
     def scan_directory(self):
         current_dir = os.getcwd()
         self.files_to_process = [f for f in os.listdir(current_dir) 
                                if f.lower().endswith(('.mp3', '.wav', '.m4a', '.flac'))]
         if self.files_to_process:
             self.analyze_file(self.files_to_process[0])
-    
+
     def setup_gui(self):
         # Current file frame
         file_frame = ttk.LabelFrame(self.root, text="Current File", padding="10")
@@ -78,7 +80,7 @@ class AudioAnalysisGUI:
         # Status Label
         self.status_label = ttk.Label(self.root, text="")
         self.status_label.grid(row=4, column=0, pady=5)
-    
+
     def analyze_file(self, filename):
         try:
             file_path = os.path.join(os.getcwd(), filename)
@@ -104,7 +106,7 @@ class AudioAnalysisGUI:
             
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
-    
+
     def process_current_file(self):
         if not self.files_to_process:
             self.status_label.config(text="No files to process")
@@ -118,10 +120,28 @@ class AudioAnalysisGUI:
             bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
             
             # Process file with key and BPM
-            detect_key_and_rename(file_path, bpm)
+            output_file = detect_key_and_rename(file_path, bpm)
             
-            self.status_label.config(text=f"Processed {current_file}")
+            # Update status
+            self.status_label.config(text="Separating stems (this will take 3-5 minutes)...")
+            self.root.update()  # Force GUI update
             
+            # Perform stem separation
+            output_folder = os.path.join(os.getcwd(), 'output', 'stems')
+            stem_paths = separate_stems(output_file, output_folder)
+            
+            if stem_paths:
+                # Rename stems with original key and BPM
+                base_name = os.path.splitext(os.path.basename(output_file))[0]
+                for stem_type, path in stem_paths.items():
+                    new_name = f"{stem_type}_{base_name}.mp3"
+                    new_path = os.path.join(output_folder, new_name)
+                    os.rename(path, new_path)
+                
+                self.status_label.config(text=f"Processed {current_file} and separated stems")
+            else:
+                self.status_label.config(text="Stem separation failed")
+                
             # Move to next file if available
             self.current_file_index += 1
             if self.current_file_index < len(self.files_to_process):
@@ -131,7 +151,7 @@ class AudioAnalysisGUI:
                 
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
-    
+
     def run(self):
         self.root.mainloop()
 

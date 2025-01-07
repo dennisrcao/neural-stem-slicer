@@ -56,7 +56,6 @@ If you need to recreate the virtual environment:
 deactivate
 rm -rf .venv
 python3.11 -m venv .venv
-source .venv/bin/activate
 source .venv/bin/activate  # On macOS/Linux
 pip install -r requirements.txt
 ```
