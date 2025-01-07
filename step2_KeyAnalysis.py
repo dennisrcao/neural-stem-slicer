@@ -76,6 +76,7 @@ def update_gui_labels(key_results):
 def detect_key_and_rename(file_path, bpm):
     """
     Detect key and rename file with both key and BPM
+    Returns the path to the renamed file
     """
     print("Analyzing Key...")
     key_results = detect_key(file_path)
@@ -96,7 +97,7 @@ def detect_key_and_rename(file_path, bpm):
     shutil.copy2(file_path, new_path)
     print(f"Created file with Key and BPM prefix: {new_filename}")
     
-    return camelot, full_key, confidence
+    return new_path  # Return the path to the new file
 
 # Outer ring (Major keys - B notation)
 major_wheel = {
