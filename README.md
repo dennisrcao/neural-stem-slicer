@@ -1,4 +1,4 @@
-> **Still in development**  - this has been an independent project of mine for months and I hope to collaborate with someone and finally release it.
+> **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
 > **TODO:** 
 > - Seperate modules 1, 2, 3
 
