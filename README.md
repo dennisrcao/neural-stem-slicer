@@ -1,11 +1,19 @@
-# Split Stems
----
-## High Level Architecture
- `step1_BPMAnalysis.py` - analyzes BPM and prepends "BPM_" to a copy of the song and puts in folder `/output` where BPM is a number
- `step2_KeyAnalysis.py` - analyzes Key of song, maps it to Camelot Wheel Notation, and prepends "Key_" where Key = 1A, 2B, 12B, etc. 
- ![Camelot Wheel](README_Assets/camelot.png)
+> **Still in development**  - this has been an independent project of mine for months and I hope to collaborate with someone and finally release it.
+> **TODO:** 
+> - Seperate modules 1, 2, 3
 
- **Notes: set explorer.sortOrder to "mixed" 
+# Split Stems
+
+
+---
+
+### 🎵 High Level Concept
+Imagine a folder on your Desktop where you drag any song into it, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can then be dragged into Ableton Session view to help producers generate new ideas.
+
+## Algorithm Architecture
+![Algorithm](./README_Assets/algorithm-diagram-small.png)
+
+
 
 
 #### Prerequisites
