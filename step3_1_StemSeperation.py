@@ -23,11 +23,15 @@ def separate_stems(input_file, output_folder):
     os.makedirs(output_folder, exist_ok=True)
     
     try:
-        # Run Demucs with 4-stem model
+        # Run Demucs with fine-tuned model
         process = subprocess.run([
             'demucs',
-            '-n', 'htdemucs',  # Use the htdemucs model
-            '--mp3',           # Output as MP3
+            '-n', 'mdx_extra_q',         # Higher quality model
+            '--mp3',
+            '--segments', '10',          # Process in 10-second segments
+            '--overlap', '10',           # 10% overlap between segments
+            '--shifts', '2',             # Apply 2 shifts for better quality
+            '--split-mode', 'overlap',   # Use overlap mode for splitting
             '-o', output_folder,
             input_file
         ], capture_output=True, text=True, check=True)
