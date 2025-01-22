@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Project specific
+output/
+*.mp3
+*.wav
+*.m4a
+*.aif
+*.aiff
+*.th
+step3_0_Seperation_Models/drumsep/model/
+step3_0_Seperation_Models/drumsep/model/*.th
+
+# OS specific
+.DS_Store
+.vscode/
+
+# Development folders
+z.*
+# z.Resources/
+z.prompts/
+
+
