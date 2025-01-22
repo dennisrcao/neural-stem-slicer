@@ -145,7 +145,10 @@ class AudioAnalysisGUI:
             if not file_path.lower().endswith('.wav'):
                 print(f"Converting {current_file} to WAV format...")
                 y, sr = librosa.load(file_path, sr=None)
-                wav_path = os.path.join(os.getcwd(), 'temp_processing.wav')
+                
+                # Keep original name but change extension to .wav
+                original_name = os.path.splitext(current_file)[0]
+                wav_path = os.path.join(os.getcwd(), f"{original_name}.wav")
                 sf.write(wav_path, y, sr, subtype='PCM_24')
                 self.temp_wav_path = wav_path
                 file_path = wav_path

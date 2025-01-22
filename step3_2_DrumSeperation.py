@@ -38,8 +38,8 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         os.chmod(drumsep_script, 0o755)
         
         # Get original audio info before processing
-        y_orig, sr_orig = librosa.load(drum_stem_path, sr=None)
-        orig_len = len(y_orig)
+        y_orig, sr_orig = librosa.load(drum_stem_path, sr=None, mono=False)  # Load as stereo
+        orig_len = y_orig.shape[1] if len(y_orig.shape) > 1 else len(y_orig)
         orig_duration = librosa.get_duration(y=y_orig, sr=sr_orig)
         
         print(f"\nOriginal Audio Properties:")
@@ -97,34 +97,35 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
             old_path = os.path.join(parts_folder, f"{old_name}.wav")
             if os.path.exists(old_path):
                 print(f"\nProcessing {new_type}:")
-                # Load at original sample rate
-                y, sr = librosa.load(old_path, sr=sr_orig)
+                # Load at original sample rate and maintain stereo
+                y, sr = librosa.load(old_path, sr=sr_orig, mono=False)
                 
                 print(f"- Loaded {new_type} component:")
                 print(f"  Sample rate: {sr} Hz")
                 print(f"  Duration: {librosa.get_duration(y=y, sr=sr):.2f} seconds")
                 print(f"  Samples: {len(y)}")
                 
+                # Convert mono to stereo if needed
+                if len(y.shape) == 1:
+                    y = np.stack([y, y])  # Duplicate mono channel to stereo
+                
                 # Ensure exact length match
-                if len(y) != orig_len:
-                    print(f"- Length mismatch for {new_type}:")
-                    print(f"  Original: {orig_len} samples")
-                    print(f"  Component: {len(y)} samples")
-                    print(f"  Difference: {abs(len(y) - orig_len)} samples")
-                    
-                    # Trim or pad to match original exactly
-                    if len(y) > orig_len:
-                        print(f"  Trimming {len(y) - orig_len} samples")
-                        y = y[:orig_len]
+                if y.shape[1] != orig_len:
+                    if y.shape[1] > orig_len:
+                        y = y[:, :orig_len]
                     else:
-                        print(f"  Padding {orig_len - len(y)} samples")
-                        y = np.pad(y, (0, orig_len - len(y)))
+                        y = np.pad(y, ((0, 0), (0, orig_len - y.shape[1])))
                 
                 new_name = f"{base_name}_drum_{new_type}.wav"
                 new_path = os.path.join(output_folder, new_name)
                 
-                # Use soundfile to write WAV directly instead of ffmpeg MP3 conversion
-                sf.write(new_path, y, sr, subtype='PCM_24')
+                # Get original audio info and format
+                orig_info = sf.info(drum_stem_path)  # Get original file info
+                
+                # Save with original format and stereo channels
+                sf.write(new_path, y.T, sr, 
+                         subtype=orig_info.subtype,
+                         format=orig_info.format)
                 print(f"  Saved WAV file: {new_path}")
         
         # Clean up temporary files
