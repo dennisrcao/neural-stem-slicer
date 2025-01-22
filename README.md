@@ -33,27 +33,19 @@ python3.11 --version  # Should show Python 3.11.x
 ```bash
 # Create virtual environment
 python3.11 -m venv .venv
-
 # Activate virtual environment
 source .venv/bin/activate  # On macOS/Linux
 # OR
 .venv\Scripts\activate  # On Windows
-
 # Install dependencies
 pip install -r requirements.txt
+# Install drumsep model
+python step3_0_Seperation_Models/drumsep/drumsepInstall.py
+# Make it executable
+chmod +x step3_0_Seperation_Models/drumsep/drumsep
+
 ```
 
-```bash
-# Install drum separator
-cd drumsep
-bash drumsepInstall
-
-# Install synth separator
-cd ../synthsep
-bash synthsepInstall
-```
-
-### Step 4: Run the Splitter
 ```bash
 python split_stems.py
 ```
@@ -66,6 +58,7 @@ rm -rf .venv
 python3.11 -m venv .venv
 source .venv/bin/activate  # On macOS/Linux
 pip install -r requirements.txt
+python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ```
 or 
 `rm -rf .venv && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`

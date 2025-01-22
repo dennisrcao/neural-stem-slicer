@@ -2,9 +2,10 @@ import os
 import subprocess
 from pathlib import Path
 
-def separate_stems(input_file, output_folder):
+def separate_stems(input_file, output_folder, progress_callback=None):
     """
     Separates audio into drums, bass, vocals, and other stems using Demucs v4
+    progress_callback: function(progress_percent, status_text)
     """
     # Ensure paths are strings and absolute
     input_file = str(Path(input_file).absolute())
@@ -18,14 +19,34 @@ def separate_stems(input_file, output_folder):
         # Create output directory if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
         
-        # Run demucs CLI command - removed the --two-stems flag to get all stems
-        subprocess.run([
-            'demucs',
-            '--mp3',
-            '-n', 'htdemucs',  # Use hybrid transformer model
-            '--out', output_folder,
-            input_file
-        ], check=True)
+        # Use subprocess.Popen instead of run to capture output in real-time
+        process = subprocess.Popen(
+            [
+                'demucs',
+                '--mp3',
+                '-n', 'htdemucs',
+                '--out', output_folder,
+                input_file
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        # Monitor the output
+        while True:
+            line = process.stderr.readline()
+            if not line and process.poll() is not None:
+                break
+                
+            # Parse progress from demucs output
+            if "%" in line:
+                try:
+                    progress = float(line.split("%")[0].strip())
+                    if progress_callback:
+                        progress_callback(progress, f"Separating stems: {progress:.1f}%")
+                except ValueError:
+                    pass
         
         # Get the base name of the input file
         base_name = Path(input_file).stem

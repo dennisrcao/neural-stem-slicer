@@ -74,12 +74,29 @@ class AudioAnalysisGUI:
         ttk.Label(key_frame, text="Confidence").grid(row=0, column=2, padx=5)
         ttk.Entry(key_frame, textvariable=self.key_confidence, width=8).grid(row=1, column=2, padx=5)
         
-        # Process Button
-        ttk.Button(self.root, text="Process", command=self.process_current_file).grid(row=3, column=0, pady=10)
+        # Add Process button with new text
+        self.process_button = ttk.Button(self.root, text="Split Stems", command=self.process_current_file)
+        self.process_button.grid(row=4, column=0, pady=10)
         
-        # Status Label
-        self.status_label = ttk.Label(self.root, text="")
-        self.status_label.grid(row=4, column=0, pady=5)
+        # Add progress bar
+        self.progress_frame = ttk.LabelFrame(self.root, text="Progress", padding="10")
+        self.progress_frame.grid(row=5, column=0, padx=10, pady=5, sticky="nsew")
+        
+        self.progress_bar = ttk.Progressbar(
+            self.progress_frame, 
+            orient="horizontal", 
+            length=300, 
+            mode="determinate"
+        )
+        self.progress_bar.grid(row=0, column=0, padx=5, pady=5)
+        
+        # Add status label
+        self.status_label = ttk.Label(self.progress_frame, text="")
+        self.status_label.grid(row=1, column=0, padx=5)
+        
+        # Add progress label
+        self.progress_label = ttk.Label(self.progress_frame, text="")
+        self.progress_label.grid(row=2, column=0, padx=5)
 
     def analyze_file(self, filename):
         try:
@@ -112,6 +129,11 @@ class AudioAnalysisGUI:
             self.status_label.config(text="No files to process")
             return
         
+        def update_progress(progress, status_text):
+            self.progress_bar['value'] = progress
+            self.progress_label.config(text=status_text)
+            self.root.update()
+        
         try:
             current_file = self.files_to_process[self.current_file_index]
             file_path = os.path.join(os.getcwd(), current_file)
@@ -126,19 +148,45 @@ class AudioAnalysisGUI:
             self.status_label.config(text="Separating stems (this will take 3-5 minutes)...")
             self.root.update()  # Force GUI update
             
-            # Perform stem separation
+            # Perform stem separation with progress callback
             output_folder = os.path.join(os.getcwd(), 'output', 'stems')
-            stem_paths = separate_stems(output_file, output_folder)
+            stem_paths = separate_stems(output_file, output_folder, progress_callback=update_progress)
             
             if stem_paths:
                 # Rename stems with original key and BPM
                 base_name = os.path.splitext(os.path.basename(output_file))[0]
+                drum_stem_path = None
+                
+                # First pass: find and store drum stem path
                 for stem_type, path in stem_paths.items():
+                    if stem_type.lower() == 'drums':
+                        drum_stem_path = path
                     new_name = f"{base_name}_{stem_type.lower()}.mp3"
                     new_path = os.path.join(output_folder, new_name)
                     os.rename(path, new_path)
+                    
+                    # Update drum_stem_path to new location if it's the drum stem
+                    if path == drum_stem_path:
+                        drum_stem_path = new_path
                 
-                self.status_label.config(text=f"Processed {current_file} and separated stems")
+                # If we found drums, separate them further
+                if drum_stem_path:
+                    self.status_label.config(text="Separating drum components (this may take a few minutes)...")
+                    self.root.update()
+                    
+                    from step3_2_DrumSeperation import separate_drums
+                    camelot_key = self.camelot_key.get()
+                    bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
+                    
+                    success = separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name)
+                    if success:
+                        self.status_label.config(text=f"Processed {current_file} and separated all stems including drums")
+                    else:
+                        self.status_label.config(text=f"Processed {current_file}, but drum separation failed")
+                    self.root.update()
+                else:
+                    self.status_label.config(text=f"Processed {current_file} and separated stems")
+                
             else:
                 self.status_label.config(text="Stem separation failed")
                 
