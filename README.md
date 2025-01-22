@@ -1,19 +1,23 @@
 > **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
-> **TODO:** 
-> - Seperate modules 1, 2, 3
+
 
 # Split Stems
-
-
 ---
 
-### 🎵 High Level Concept
+## Introduction
 Imagine a folder on your Desktop where you drag any song into it, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can then be dragged into Ableton Session view to help producers generate new ideas.
+
+
+Create your own custom organized loop library from: 
+- Full songs you like
+- Personal stems (breath life into old song stems)
+- Vinyl rips
+
+Full Song -> Ableton Sesssion View 8 Bar Scenes
+
 
 ## Algorithm Architecture
 ![Algorithm](./README_Assets/algorithm-diagram-small.png)
-
-
 
 
 #### Prerequisites
