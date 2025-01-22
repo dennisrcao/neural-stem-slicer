@@ -1,4 +1,4 @@
-> **Still in development**  - this has been an independent project of mine for months and I hope to collaborate with someone and finally release it.
+> **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
 > **TODO:** 
 > - Seperate modules 1, 2, 3
 
@@ -60,5 +60,4 @@ source .venv/bin/activate  # On macOS/Linux
 pip install -r requirements.txt
 python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ```
-or 
-`rm -rf .venv && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
+
