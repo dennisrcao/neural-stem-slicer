@@ -1,0 +1,23 @@
+# Deep Learning & Audio Processing
+numpy>=1.20.0,<2.0.0
+deeprhythm>=0.0.13
+librosa>=0.10.1
+soundfile>=0.12.1
+demucs>=4.0.0
+diffq>=0.2.0  # Required by demucs for quantization
+torch>=2.0.0,<2.2.0
+torchaudio>=2.0.0,<2.2.0
+ffmpeg-python>=0.2.0
+gdown>=4.7.1  # For downloading drumsep model
+
+# Additional required dependencies
+pydub>=0.25.1  # For audio file handling
+scipy>=1.7.0   # Required by librosa
+tqdm>=4.65.0   # For progress bars
+
+# System requirements (not pip installable, need to be installed via system package manager)
+# ffmpeg - Required for audio processing
+# tkinter - Comes with Python installation
+# Example installation:
+# macOS: brew install ffmpeg
+# Ubuntu: sudo apt-get install ffmpeg
