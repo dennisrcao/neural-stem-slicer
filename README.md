@@ -5,15 +5,14 @@
 ---
 
 ## Introduction
-Imagine a folder on your Desktop where you drag any song into it, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can then be dragged into Ableton Session view to help producers generate new ideas.
+Imagine a folder on your Desktop where you drag any song in, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can added to your custom loop library or be dragged into Ableton Session view to help producers generate new ideas.
+![Summary](./README_Assets/algorithm-summary.png)
 
 
-Create your own custom organized loop library from: 
+Drag in...
 - Full songs you like
 - Personal stems (breath life into old song stems)
 - Vinyl rips
-
-Full Song -> Ableton Sesssion View 8 Bar Scenes
 
 
 ## Algorithm Architecture
