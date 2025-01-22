@@ -4,3 +4,7 @@ deeprhythm>=0.0.13
 librosa>=0.10.1
 soundfile>=0.12.1
 demucs>=4.0.0
+diffq>=0.2.0  # Required by demucs for quantization
+torch>=2.0.0,<2.2.0
+torchaudio>=2.0.0,<2.2.0
+ffmpeg-python>=0.2.0

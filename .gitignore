@@ -21,12 +21,12 @@ dist/
 *.csv
 *.pb
 .workspace
+
 output/
-*.mp3
-*.wav
-*.m4a
+z.Resources
+z.Prompts
+z.TestSongs
+
 .DS_Store
 
 
-# Ignore reference repositories
-z.Resources/mixxx/

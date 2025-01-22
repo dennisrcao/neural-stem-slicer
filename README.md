@@ -67,6 +67,5 @@ python3.11 -m venv .venv
 source .venv/bin/activate  # On macOS/Linux
 pip install -r requirements.txt
 ```
-
-### Algorithm
-Based on [DeepRhythm](https://github.com/bleugreen/deeprhythm)
+or 
+`rm -rf .venv && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`

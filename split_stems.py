@@ -134,7 +134,7 @@ class AudioAnalysisGUI:
                 # Rename stems with original key and BPM
                 base_name = os.path.splitext(os.path.basename(output_file))[0]
                 for stem_type, path in stem_paths.items():
-                    new_name = f"{stem_type}_{base_name}.mp3"
+                    new_name = f"{base_name}_{stem_type.lower()}.mp3"
                     new_path = os.path.join(output_folder, new_name)
                     os.rename(path, new_path)
                 
