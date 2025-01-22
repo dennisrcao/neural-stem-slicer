@@ -39,6 +39,8 @@ source .venv/bin/activate  # On macOS/Linux
 .venv\Scripts\activate  # On Windows
 # Install dependencies
 pip install -r requirements.txt
+# Brew install the tkinter for 3.11
+brew install python-tk@3.11
 # Install drumsep model
 python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 # Make it executable
