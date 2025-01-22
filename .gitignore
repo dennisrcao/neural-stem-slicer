@@ -3,30 +3,27 @@ __pycache__/
 *.py[cod]
 *$py.class
 .Python
-*.so
 .env
 .venv
+env/
 venv/
 ENV/
 
 # Project specific
-data/
-experiments/
-*.hdf5
-*.json
-model_weights/
-dist/
-*.whl
-*.tar.gz
-*.csv
-*.pb
-.workspace
-
 output/
-z.Resources
-z.Prompts
-z.TestSongs
+*.mp3
+*.wav
+*.m4a
+*.aif
+*.aiff
 
+# OS specific
 .DS_Store
+.vscode/
+
+# Development folders
+z.*
+z.Resources/
+z.prompts/
 
 
