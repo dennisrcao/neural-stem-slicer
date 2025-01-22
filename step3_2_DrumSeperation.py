@@ -120,31 +120,12 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
                         print(f"  Padding {orig_len - len(y)} samples")
                         y = np.pad(y, (0, orig_len - len(y)))
                 
-                new_name = f"{base_name}_drum_{new_type}.mp3"
+                new_name = f"{base_name}_drum_{new_type}.wav"
                 new_path = os.path.join(output_folder, new_name)
                 
-                # Convert to MP3 with exact settings
-                try:
-                    print(f"- Converting to MP3:")
-                    print(f"  Output: {new_path}")
-                    import ffmpeg
-                    stream = ffmpeg.input('pipe:', format='f32le', ar=sr, ac=1)
-                    stream = ffmpeg.output(stream, new_path,
-                                        acodec='libmp3lame',
-                                        ar=sr,
-                                        ac=1,
-                                        ab='320k',
-                                        **{'start_at_zero': None})  # Ensure no delay
-                    
-                    # Write audio data directly to ffmpeg
-                    process = ffmpeg.run_async(stream, pipe_stdin=True)
-                    process.stdin.write(y.astype(np.float32).tobytes())
-                    process.stdin.close()
-                    process.wait()
-                    print("  Conversion complete")
-                    
-                except ffmpeg.Error as e:
-                    print(f"Error converting {old_name}: {e.stderr.decode()}")
+                # Use soundfile to write WAV directly instead of ffmpeg MP3 conversion
+                sf.write(new_path, y, sr, subtype='PCM_24')
+                print(f"  Saved WAV file: {new_path}")
         
         # Clean up temporary files
         print("\nCleaning up temporary files...")

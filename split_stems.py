@@ -7,6 +7,7 @@ from step1_BPMAnalysis import load_and_analyze_bpm
 from deeprhythm import DeepRhythmPredictor
 import librosa
 from step2_KeyAnalysis import detect_key, detect_key_and_rename
+import soundfile as sf
 
 class AudioAnalysisGUI:
     def __init__(self):
@@ -25,6 +26,8 @@ class AudioAnalysisGUI:
         self.camelot_key = tk.StringVar()
         self.actual_key = tk.StringVar()
         self.key_confidence = tk.StringVar()
+        
+        self.temp_wav_path = None  # Add this to track temporary WAV files
         
         # Find audio files in current directory
         self.scan_directory()
@@ -138,6 +141,15 @@ class AudioAnalysisGUI:
             current_file = self.files_to_process[self.current_file_index]
             file_path = os.path.join(os.getcwd(), current_file)
             
+            # Convert to WAV if not already WAV
+            if not file_path.lower().endswith('.wav'):
+                print(f"Converting {current_file} to WAV format...")
+                y, sr = librosa.load(file_path, sr=None)
+                wav_path = os.path.join(os.getcwd(), 'temp_processing.wav')
+                sf.write(wav_path, y, sr, subtype='PCM_24')
+                self.temp_wav_path = wav_path
+                file_path = wav_path
+            
             # Use manual BPM if provided
             bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
             
@@ -161,7 +173,7 @@ class AudioAnalysisGUI:
                 for stem_type, path in stem_paths.items():
                     if stem_type.lower() == 'drums':
                         drum_stem_path = path
-                    new_name = f"{base_name}_{stem_type.lower()}.mp3"
+                    new_name = f"{base_name}_{stem_type.lower()}.wav"
                     new_path = os.path.join(output_folder, new_name)
                     os.rename(path, new_path)
                     
@@ -197,7 +209,14 @@ class AudioAnalysisGUI:
             else:
                 self.status_label.config(text="All files processed!")
                 
+            # Clean up temporary WAV if it exists
+            if self.temp_wav_path and os.path.exists(self.temp_wav_path):
+                os.remove(self.temp_wav_path)
+                self.temp_wav_path = None
+                
         except Exception as e:
+            if self.temp_wav_path and os.path.exists(self.temp_wav_path):
+                os.remove(self.temp_wav_path)
             self.status_label.config(text=f"Error: {str(e)}")
 
     def run(self):

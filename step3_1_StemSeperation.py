@@ -23,7 +23,6 @@ def separate_stems(input_file, output_folder, progress_callback=None):
         process = subprocess.Popen(
             [
                 'demucs',
-                '--mp3',
                 '-n', 'htdemucs',
                 '--out', output_folder,
                 input_file
@@ -58,7 +57,7 @@ def separate_stems(input_file, output_folder, progress_callback=None):
         stem_paths = {}
         if os.path.exists(stem_folder):
             for stem_file in os.listdir(stem_folder):
-                if stem_file.endswith('.mp3'):
+                if stem_file.endswith('.wav'):
                     stem_name = stem_file.split('.')[0].upper()
                     stem_path = os.path.join(stem_folder, stem_file)
                     stem_paths[stem_name] = stem_path
