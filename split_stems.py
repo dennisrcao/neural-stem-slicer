@@ -8,6 +8,7 @@ from deeprhythm import DeepRhythmPredictor
 import librosa
 from step2_KeyAnalysis import detect_key, detect_key_and_rename
 import soundfile as sf
+import shutil
 
 class AudioAnalysisGUI:
     def __init__(self):
@@ -19,15 +20,23 @@ class AudioAnalysisGUI:
         self.current_file_index = 0
         self.deeprhythm_bpm = tk.StringVar()
         self.deeprhythm_confidence = tk.StringVar()
-        self.librosa_bpm = tk.StringVar()
         self.manual_bpm = tk.StringVar()
         
         # Key Analysis variables
         self.camelot_key = tk.StringVar()
         self.actual_key = tk.StringVar()
         self.key_confidence = tk.StringVar()
+        self.combined_key = tk.StringVar()
+        self.manual_key = tk.StringVar()
         
         self.temp_wav_path = None  # Add this to track temporary WAV files
+        
+        # Add checkbox variables
+        self.module1_enabled = tk.BooleanVar(value=True)
+        self.module2_enabled = tk.BooleanVar(value=True)
+        
+        # Add progress tracking variable
+        self.current_progress = 0
         
         # Find audio files in current directory
         self.scan_directory()
@@ -46,164 +55,208 @@ class AudioAnalysisGUI:
         file_frame.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
         
         if self.files_to_process:
-            ttk.Label(file_frame, text=self.files_to_process[0]).grid(row=0, column=0)
+            ttk.Label(file_frame, text=self.files_to_process[0]).grid(row=0, column=0, sticky="w")
         else:
-            ttk.Label(file_frame, text="No audio files found").grid(row=0, column=0)
+            ttk.Label(file_frame, text="No audio files found").grid(row=0, column=0, sticky="w")
         
-        # BPM Analysis frame
-        bpm_frame = ttk.LabelFrame(self.root, text="Step 1: BPM Analysis", padding="10")
-        bpm_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+        # Set consistent column widths
+        column_widths = [15, 8, 15]  # Width for each column
         
-        ttk.Label(bpm_frame, text="DeepRhythm").grid(row=0, column=0, padx=5)
-        ttk.Entry(bpm_frame, textvariable=self.deeprhythm_bpm, width=8).grid(row=1, column=0, padx=5)
-        ttk.Entry(bpm_frame, textvariable=self.deeprhythm_confidence, width=8).grid(row=1, column=1, padx=5)
+        # Module 1: Analysis Frame
+        module1_frame = ttk.LabelFrame(self.root, padding="10")
+        module1_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
         
-        ttk.Label(bpm_frame, text="Librosa").grid(row=0, column=2, padx=5)
-        ttk.Entry(bpm_frame, textvariable=self.librosa_bpm, width=8).grid(row=1, column=2, padx=5)
+        # Checkbox and label in a separate frame
+        module1_header = ttk.Frame(module1_frame)
+        module1_header.grid(row=0, column=0, columnspan=3, sticky="w")
+        ttk.Checkbutton(module1_header, variable=self.module1_enabled).grid(row=0, column=0, padx=(0,5))
+        ttk.Label(module1_header, text="Module 1: BPM and Key Analysis").grid(row=0, column=1, sticky="w")
         
-        ttk.Label(bpm_frame, text="Manual Override").grid(row=0, column=3, padx=5)
-        ttk.Entry(bpm_frame, textvariable=self.manual_bpm, width=8).grid(row=1, column=3, padx=5)
+        # BPM Analysis section
+        ttk.Label(module1_frame, text="DeepRhythm").grid(row=1, column=0, padx=5)
+        ttk.Label(module1_frame, text="Confidence").grid(row=1, column=1, padx=5)
+        ttk.Label(module1_frame, text="Manual Override").grid(row=1, column=2, padx=5)
         
-        # Key Analysis frame
-        key_frame = ttk.LabelFrame(self.root, text="Step 2: Key Analysis", padding="10")
-        key_frame.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        ttk.Entry(module1_frame, textvariable=self.deeprhythm_bpm, width=column_widths[0]).grid(row=2, column=0, padx=5)
+        ttk.Entry(module1_frame, textvariable=self.deeprhythm_confidence, width=column_widths[1]).grid(row=2, column=1, padx=5)
+        ttk.Entry(module1_frame, textvariable=self.manual_bpm, width=column_widths[2]).grid(row=2, column=2, padx=5)
         
-        ttk.Label(key_frame, text="Camelot").grid(row=0, column=0, padx=5)
-        ttk.Entry(key_frame, textvariable=self.camelot_key, width=8).grid(row=1, column=0, padx=5)
+        # Separator between BPM and Key
+        ttk.Separator(module1_frame, orient='horizontal').grid(row=3, column=0, columnspan=3, sticky="ew", pady=10)
         
-        ttk.Label(key_frame, text="Key").grid(row=0, column=1, padx=5)
-        ttk.Entry(key_frame, textvariable=self.actual_key, width=12).grid(row=1, column=1, padx=5)
+        # Key Analysis section
+        ttk.Label(module1_frame, text="Camelot/Key").grid(row=4, column=0, padx=5)
+        ttk.Label(module1_frame, text="Confidence").grid(row=4, column=1, padx=5)
+        ttk.Label(module1_frame, text="Manual Override").grid(row=4, column=2, padx=5)
         
-        ttk.Label(key_frame, text="Confidence").grid(row=0, column=2, padx=5)
-        ttk.Entry(key_frame, textvariable=self.key_confidence, width=8).grid(row=1, column=2, padx=5)
+        ttk.Entry(module1_frame, textvariable=self.combined_key, width=column_widths[0]).grid(row=5, column=0, padx=5)
+        ttk.Entry(module1_frame, textvariable=self.key_confidence, width=column_widths[1]).grid(row=5, column=1, padx=5)
+        ttk.Entry(module1_frame, textvariable=self.manual_key, width=column_widths[2]).grid(row=5, column=2, padx=5)
         
-        # Add Process button with new text
-        self.process_button = ttk.Button(self.root, text="Split Stems", command=self.process_current_file)
-        self.process_button.grid(row=4, column=0, pady=10)
+        # Module 2: Stem Separation Frame
+        module2_frame = ttk.LabelFrame(self.root, padding="10")
+        module2_frame.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
         
-        # Add progress bar
-        self.progress_frame = ttk.LabelFrame(self.root, text="Progress", padding="10")
-        self.progress_frame.grid(row=5, column=0, padx=10, pady=5, sticky="nsew")
+        # Module 2 header with checkbox
+        module2_header = ttk.Frame(module2_frame)
+        module2_header.grid(row=0, column=0, sticky="w")
+        ttk.Checkbutton(module2_header, variable=self.module2_enabled).grid(row=0, column=0, padx=(0,5))
+        ttk.Label(module2_header, text="Module 2: Stem Separation").grid(row=0, column=1, sticky="w")
+        
+        # Progress section
+        progress_frame = ttk.Frame(module2_frame)
+        progress_frame.grid(row=1, column=0, padx=5, pady=10, sticky="nsew")
+        
+        # Configure progress frame to expand
+        module2_frame.columnconfigure(0, weight=1)
+        progress_frame.columnconfigure(0, weight=1)
         
         self.progress_bar = ttk.Progressbar(
-            self.progress_frame, 
-            orient="horizontal", 
-            length=300, 
+            progress_frame,
+            orient="horizontal",
             mode="determinate"
         )
-        self.progress_bar.grid(row=0, column=0, padx=5, pady=5)
+        self.progress_bar.grid(row=0, column=0, sticky="ew", padx=5)
         
-        # Add status label
-        self.status_label = ttk.Label(self.progress_frame, text="")
+        # Status labels
+        self.status_label = ttk.Label(progress_frame, text="")
         self.status_label.grid(row=1, column=0, padx=5)
         
-        # Add progress label
-        self.progress_label = ttk.Label(self.progress_frame, text="")
+        self.progress_label = ttk.Label(progress_frame, text="")
         self.progress_label.grid(row=2, column=0, padx=5)
+        
+        # Process button at bottom
+        self.process_button = ttk.Button(self.root, text="Process", command=self.process_current_file)
+        self.process_button.grid(row=3, column=0, pady=10)
+        
+        # Configure root window to expand properly
+        self.root.columnconfigure(0, weight=1)
 
     def analyze_file(self, filename):
         try:
             file_path = os.path.join(os.getcwd(), filename)
             
-            # BPM Analysis
+            # BPM Analysis - only DeepRhythm
             y, sr = librosa.load(file_path)
             predictor = DeepRhythmPredictor()
             bpm, confidence = predictor.predict_from_audio(y, sr, include_confidence=True)
             self.deeprhythm_bpm.set(f"{bpm:.2f}")
             self.deeprhythm_confidence.set(f"{confidence:.2%}")
             
-            # Librosa BPM
-            onset_env = librosa.onset.onset_strength(y=y, sr=sr)
-            tempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sr)[0]
-            self.librosa_bpm.set(f"{tempo:.2f}")
-            
             # Key Analysis
             key_results = detect_key(file_path)
             camelot, full_key, key_conf = key_results[0]
-            self.camelot_key.set(camelot)
-            self.actual_key.set(full_key)
+            
+            # Set combined Camelot/Key format
+            self.combined_key.set(f"{camelot}/{full_key}")
             self.key_confidence.set(f"{key_conf:.2f}%")
             
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
 
     def process_current_file(self):
-        if not self.files_to_process:
-            self.status_label.config(text="No files to process")
-            return
-        
-        def update_progress(progress, status_text):
-            self.progress_bar['value'] = progress
-            self.progress_label.config(text=status_text)
-            self.root.update()
-        
         try:
             current_file = self.files_to_process[self.current_file_index]
             file_path = os.path.join(os.getcwd(), current_file)
             
-            # Convert to WAV if not already WAV
-            if not file_path.lower().endswith('.wav'):
-                print(f"Converting {current_file} to WAV format...")
-                y, sr = librosa.load(file_path, sr=None)
+            # Only perform analysis if Module 1 is enabled
+            if self.module1_enabled.get():
+                # Get BPM (from manual override or detection)
+                bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
                 
-                # Keep original name but change extension to .wav
-                original_name = os.path.splitext(current_file)[0]
-                wav_path = os.path.join(os.getcwd(), f"{original_name}.wav")
-                sf.write(wav_path, y, sr, subtype='PCM_24')
-                self.temp_wav_path = wav_path
-                file_path = wav_path
-            
-            # Use manual BPM if provided
-            bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
-            
-            # Process file with key and BPM
-            output_file = detect_key_and_rename(file_path, bpm)
-            
-            # Update status
-            self.status_label.config(text="Separating stems (this will take 3-5 minutes)...")
-            self.root.update()  # Force GUI update
-            
-            # Perform stem separation with progress callback
-            output_folder = os.path.join(os.getcwd(), 'output', 'stems')
-            stem_paths = separate_stems(output_file, output_folder, progress_callback=update_progress)
-            
-            if stem_paths:
-                # Rename stems with original key and BPM
-                base_name = os.path.splitext(os.path.basename(output_file))[0]
-                drum_stem_path = None
-                
-                # First pass: find and store drum stem path
-                for stem_type, path in stem_paths.items():
-                    if stem_type.lower() == 'drums':
-                        drum_stem_path = path
-                    new_name = f"{base_name}_{stem_type.lower()}.wav"
-                    new_path = os.path.join(output_folder, new_name)
-                    os.rename(path, new_path)
-                    
-                    # Update drum_stem_path to new location if it's the drum stem
-                    if path == drum_stem_path:
-                        drum_stem_path = new_path
-                
-                # If we found drums, separate them further
-                if drum_stem_path:
-                    self.status_label.config(text="Separating drum components (this may take a few minutes)...")
-                    self.root.update()
-                    
-                    from step3_2_DrumSeperation import separate_drums
-                    camelot_key = self.camelot_key.get()
-                    bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
-                    
-                    success = separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name)
-                    if success:
-                        self.status_label.config(text=f"Processed {current_file} and separated all stems including drums")
-                    else:
-                        self.status_label.config(text=f"Processed {current_file}, but drum separation failed")
-                    self.root.update()
+                # Get key (from manual override or detection)
+                if self.manual_key.get():
+                    camelot_key = self.manual_key.get().split('/')[0] if '/' in self.manual_key.get() else self.manual_key.get()
+                    # Create output file with manual key override
+                    directory = os.path.dirname(file_path)
+                    output_dir = os.path.join(directory, 'output')
+                    os.makedirs(output_dir, exist_ok=True)
+                    filename = os.path.basename(file_path)
+                    new_filename = f"{camelot_key}_{bpm:.2f}BPM_{filename}"
+                    output_file = os.path.join(output_dir, new_filename)
+                    shutil.copy2(file_path, output_file)
                 else:
-                    self.status_label.config(text=f"Processed {current_file} and separated stems")
-                
+                    # Use detected key
+                    output_file = detect_key_and_rename(file_path, bpm)
             else:
-                self.status_label.config(text="Stem separation failed")
+                output_file = file_path
+                
+            # Only perform stem separation if Module 2 is enabled
+            if self.module2_enabled.get():
+                # Reset progress bar
+                self.progress_bar['value'] = 0
+                self.progress_label.config(text="0%")
+                
+                self.status_label.config(text="Initializing stem separation...")
+                self.root.update()
+                
+                # Convert to WAV if not already WAV
+                if not file_path.lower().endswith('.wav'):
+                    self.status_label.config(text="Converting to WAV format...")
+                    self.root.update()
+                    print(f"Converting {current_file} to WAV format...")
+                    y, sr = librosa.load(file_path, sr=None)
+                    
+                    # Keep original name but change extension to .wav
+                    original_name = os.path.splitext(current_file)[0]
+                    wav_path = os.path.join(os.getcwd(), f"{original_name}.wav")
+                    sf.write(wav_path, y, sr, subtype='PCM_24')
+                    self.temp_wav_path = wav_path
+                    file_path = wav_path
+                
+                # Perform stem separation with progress callback
+                self.status_label.config(text="Starting stem separation (this will take 3-5 minutes)...")
+                self.root.update()
+                
+                output_folder = os.path.join(os.getcwd(), 'output', 'stems')
+                os.makedirs(output_folder, exist_ok=True)
+                
+                try:
+                    stem_paths = separate_stems(output_file, output_folder, progress_callback=self.update_progress)
+                    if not stem_paths:
+                        raise Exception("Stem separation returned no paths")
+                except Exception as e:
+                    print(f"Stem separation error: {str(e)}")
+                    self.status_label.config(text=f"Stem separation failed: {str(e)}")
+                    self.root.update()
+                    return
+                
+                if stem_paths:
+                    # Rename stems with original key and BPM
+                    base_name = os.path.splitext(os.path.basename(output_file))[0]
+                    drum_stem_path = None
+                    
+                    # First pass: find and store drum stem path
+                    for stem_type, path in stem_paths.items():
+                        if stem_type.lower() == 'drums':
+                            drum_stem_path = path
+                        new_name = f"{base_name}_{stem_type.lower()}.wav"
+                        new_path = os.path.join(output_folder, new_name)
+                        os.rename(path, new_path)
+                        
+                        # Update drum_stem_path to new location if it's the drum stem
+                        if path == drum_stem_path:
+                            drum_stem_path = new_path
+                    
+                    # If we found drums, separate them further
+                    if drum_stem_path:
+                        self.status_label.config(text="Separating drum components (this may take a few minutes)...")
+                        self.root.update()
+                        
+                        from step3_2_DrumSeperation import separate_drums
+                        bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
+                        
+                        success = separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name)
+                        if success:
+                            self.status_label.config(text=f"Processed {current_file} and separated all stems including drums")
+                        else:
+                            self.status_label.config(text=f"Processed {current_file}, but drum separation failed")
+                        self.root.update()
+                    else:
+                        self.status_label.config(text=f"Processed {current_file} and separated stems")
+                
+                else:
+                    self.status_label.config(text="Stem separation failed")
                 
             # Move to next file if available
             self.current_file_index += 1
@@ -221,6 +274,44 @@ class AudioAnalysisGUI:
             if self.temp_wav_path and os.path.exists(self.temp_wav_path):
                 os.remove(self.temp_wav_path)
             self.status_label.config(text=f"Error: {str(e)}")
+
+    def update_progress(self, progress, status_message=None):
+        """
+        Update the progress bar and progress label
+        progress: float or string representing progress
+        status_message: optional status message to display
+        """
+        try:
+            # Convert progress to percentage (0-100)
+            if isinstance(progress, str):
+                try:
+                    # Try to extract number from string like "45.5%"
+                    percentage = float(progress.strip('%'))
+                except ValueError:
+                    percentage = 0
+            else:
+                percentage = float(progress)
+            
+            # Ensure percentage is between 0 and 100
+            percentage = max(0, min(100, percentage))
+            
+            # Update progress bar
+            self.progress_bar['value'] = percentage
+            
+            # Update progress label
+            self.progress_label.config(text=f"{percentage:.1f}%")
+            
+            # Update status message if provided
+            if status_message:
+                self.status_label.config(text=status_message)
+            
+            # Force GUI update
+            self.root.update()
+            
+        except Exception as e:
+            print(f"Error updating progress: {str(e)}")
+            # Don't let progress errors stop the process
+            pass
 
     def run(self):
         self.root.mainloop()

@@ -1,35 +1,16 @@
-import librosa
-import os
-import shutil
 from deeprhythm import DeepRhythmPredictor
+import librosa
 
 def detect_bpm(y, sr, file_path, start_bpm=None):
     """
-    Detect BPM using DeepRhythm with fallback to librosa
+    Detect BPM using DeepRhythm
     """
     print("Analyzing BPM...")
     
-    try:
-        predictor = DeepRhythmPredictor()
-        bpm, confidence = predictor.predict_from_audio(y, sr, include_confidence=True)
-        print(f"DeepRhythm detected BPM: {bpm:.2f} (confidence: {confidence:.2%})")
-        return bpm, confidence
-    except Exception as e:
-        print(f"DeepRhythm error: {e}, falling back to librosa")
-        
-        # Convert to mono if needed
-        if len(y.shape) > 1:
-            y = y.mean(axis=1)
-        
-        # Use librosa's tempo detection
-        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
-        tempo = librosa.feature.tempo(
-            onset_envelope=onset_env,
-            sr=sr,
-        )[0]
-        
-        print(f"Librosa detected BPM: {tempo:.2f}")
-        return tempo, None
+    predictor = DeepRhythmPredictor()
+    bpm, confidence = predictor.predict_from_audio(y, sr, include_confidence=True)
+    print(f"DeepRhythm detected BPM: {bpm:.2f} (confidence: {confidence:.2%})")
+    return bpm, confidence
 
 def load_and_analyze_bpm(file_path, manual_bpm=None):
     """

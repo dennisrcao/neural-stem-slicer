@@ -1,5 +1,8 @@
 > **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
 
+<b>TODO:</b> 
+- type check for manual override must be a number BPM and a camelot wheel string 
+
 
 # Split Stems
 ---
