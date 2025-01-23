@@ -8,3 +8,8 @@
 
 - [Mixxx - Open Source DJ Mixing Software](https://github.com/mixxxdj/mixxx)
   > Best BPM detection implementation reference
+
+
+- [UV]( https://github.com/astral-sh/uv)
+  > Fast Python package manager written in Rust
+
