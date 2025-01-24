@@ -97,24 +97,25 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
             old_path = os.path.join(parts_folder, f"{old_name}.wav")
             if os.path.exists(old_path):
                 print(f"\nProcessing {new_type}:")
-                # Load at original sample rate and maintain stereo
+                # Load audio file properly
                 y, sr = librosa.load(old_path, sr=sr_orig, mono=False)
                 
                 print(f"- Loaded {new_type} component:")
                 print(f"  Sample rate: {sr} Hz")
+                print(f"  Shape: {y.shape}")
                 print(f"  Duration: {librosa.get_duration(y=y, sr=sr):.2f} seconds")
-                print(f"  Samples: {len(y)}")
                 
                 # Convert mono to stereo if needed
                 if len(y.shape) == 1:
-                    y = np.stack([y, y])  # Duplicate mono channel to stereo
+                    y = np.vstack((y, y))  # Use vstack instead of stack
                 
-                # Ensure exact length match
+                # Ensure exact length match with proper shape handling
                 if y.shape[1] != orig_len:
                     if y.shape[1] > orig_len:
                         y = y[:, :orig_len]
                     else:
-                        y = np.pad(y, ((0, 0), (0, orig_len - y.shape[1])))
+                        pad_width = ((0, 0), (0, orig_len - y.shape[1]))
+                        y = np.pad(y, pad_width, mode='constant')
                 
                 new_name = f"{base_name}_drum_{new_type}.wav"
                 new_path = os.path.join(output_folder, new_name)

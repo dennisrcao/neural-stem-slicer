@@ -34,6 +34,7 @@ class AudioAnalysisGUI:
         # Add checkbox variables
         self.module1_enabled = tk.BooleanVar(value=True)
         self.module2_enabled = tk.BooleanVar(value=True)
+        self.module3_enabled = tk.BooleanVar(value=True)
         
         # Add progress tracking variable
         self.current_progress = 0
@@ -93,9 +94,9 @@ class AudioAnalysisGUI:
         ttk.Entry(module1_frame, textvariable=self.key_confidence, width=column_widths[1]).grid(row=5, column=1, padx=5)
         ttk.Entry(module1_frame, textvariable=self.manual_key, width=column_widths[2]).grid(row=5, column=2, padx=5)
         
-        # Module 2: Stem Separation Frame
-        module2_frame = ttk.LabelFrame(self.root, padding="10")
-        module2_frame.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        # Module 2: Stem Separation Frame - reduce height
+        module2_frame = ttk.LabelFrame(self.root, padding="5")  # reduced padding
+        module2_frame.grid(row=2, column=0, padx=10, pady=2, sticky="nsew")  # reduced pady
         
         # Module 2 header with checkbox
         module2_header = ttk.Frame(module2_frame)
@@ -103,9 +104,9 @@ class AudioAnalysisGUI:
         ttk.Checkbutton(module2_header, variable=self.module2_enabled).grid(row=0, column=0, padx=(0,5))
         ttk.Label(module2_header, text="Module 2: Stem Separation").grid(row=0, column=1, sticky="w")
         
-        # Progress section
+        # Progress section - reduced vertical spacing
         progress_frame = ttk.Frame(module2_frame)
-        progress_frame.grid(row=1, column=0, padx=5, pady=10, sticky="nsew")
+        progress_frame.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")  # reduced pady
         
         # Configure progress frame to expand
         module2_frame.columnconfigure(0, weight=1)
@@ -125,9 +126,19 @@ class AudioAnalysisGUI:
         self.progress_label = ttk.Label(progress_frame, text="")
         self.progress_label.grid(row=2, column=0, padx=5)
         
-        # Process button at bottom
+        # Module 3: Chop Segments Frame
+        module3_frame = ttk.LabelFrame(self.root, padding="5")
+        module3_frame.grid(row=3, column=0, padx=10, pady=2, sticky="nsew")
+        
+        # Module 3 header with checkbox
+        module3_header = ttk.Frame(module3_frame)
+        module3_header.grid(row=0, column=0, sticky="w")
+        ttk.Checkbutton(module3_header, variable=self.module3_enabled).grid(row=0, column=0, padx=(0,5))
+        ttk.Label(module3_header, text="Module 3: Chop Segments 8 Bars").grid(row=0, column=1, sticky="w")
+        
+        # Process button - move to row 4 (after Module 3)
         self.process_button = ttk.Button(self.root, text="Process", command=self.process_current_file)
-        self.process_button.grid(row=3, column=0, pady=10)
+        self.process_button.grid(row=4, column=0, pady=10, sticky="s")
         
         # Configure root window to expand properly
         self.root.columnconfigure(0, weight=1)
@@ -159,105 +170,52 @@ class AudioAnalysisGUI:
             current_file = self.files_to_process[self.current_file_index]
             file_path = os.path.join(os.getcwd(), current_file)
             
-            # Only perform analysis if Module 1 is enabled
-            if self.module1_enabled.get():
-                # Get BPM (from manual override or detection)
-                bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
-                
-                # Get key (from manual override or detection)
-                if self.manual_key.get():
-                    camelot_key = self.manual_key.get().split('/')[0] if '/' in self.manual_key.get() else self.manual_key.get()
-                    # Create output file with manual key override
-                    directory = os.path.dirname(file_path)
-                    output_dir = os.path.join(directory, 'output')
-                    os.makedirs(output_dir, exist_ok=True)
-                    filename = os.path.basename(file_path)
-                    new_filename = f"{camelot_key}_{bpm:.2f}BPM_{filename}"
-                    output_file = os.path.join(output_dir, new_filename)
-                    shutil.copy2(file_path, output_file)
-                else:
-                    # Use detected key
-                    output_file = detect_key_and_rename(file_path, bpm)
-            else:
-                output_file = file_path
-                
+            # Get BPM and key info
+            bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
+            camelot_key = self.manual_key.get() if self.manual_key.get() else self.combined_key.get().split('/')[0]
+            
+            # Create the key/BPM prefix
+            prefix = f"{camelot_key}_{bpm:.2f}BPM_"
+            
             # Only perform stem separation if Module 2 is enabled
             if self.module2_enabled.get():
-                # Reset progress bar
-                self.progress_bar['value'] = 0
-                self.progress_label.config(text="0%")
-                
-                self.status_label.config(text="Initializing stem separation...")
-                self.root.update()
-                
-                # Convert to WAV if not already WAV
-                if not file_path.lower().endswith('.wav'):
-                    self.status_label.config(text="Converting to WAV format...")
-                    self.root.update()
-                    print(f"Converting {current_file} to WAV format...")
-                    y, sr = librosa.load(file_path, sr=None)
-                    
-                    # Keep original name but change extension to .wav
-                    original_name = os.path.splitext(current_file)[0]
-                    wav_path = os.path.join(os.getcwd(), f"{original_name}.wav")
-                    sf.write(wav_path, y, sr, subtype='PCM_24')
-                    self.temp_wav_path = wav_path
-                    file_path = wav_path
-                
-                # Perform stem separation with progress callback
-                self.status_label.config(text="Starting stem separation (this will take 3-5 minutes)...")
+                self.status_label.config(text="Starting stem separation...")
                 self.root.update()
                 
                 output_folder = os.path.join(os.getcwd(), 'output', 'stems')
                 os.makedirs(output_folder, exist_ok=True)
                 
-                try:
-                    stem_paths = separate_stems(output_file, output_folder, progress_callback=self.update_progress)
-                    if not stem_paths:
-                        raise Exception("Stem separation returned no paths")
-                except Exception as e:
-                    print(f"Stem separation error: {str(e)}")
-                    self.status_label.config(text=f"Stem separation failed: {str(e)}")
+                stem_paths = separate_stems(file_path, output_folder, 
+                                         progress_callback=self.update_progress,
+                                         prefix=prefix)
+                
+                if stem_paths and 'DRUMS' in stem_paths:
+                    self.status_label.config(text="Separating drum components...")
                     self.root.update()
-                    return
+                    
+                    base_name = f"{camelot_key}_{bpm:.2f}BPM_{os.path.splitext(current_file)[0]}"
+                    
+                    from step3_2_DrumSeperation import separate_drums
+                    success = separate_drums(stem_paths['DRUMS'], output_folder, camelot_key, bpm, base_name)
+                    
+                    if not success:
+                        self.status_label.config(text="Drum separation failed")
+                        return
                 
-                if stem_paths:
-                    # Rename stems with original key and BPM
-                    base_name = os.path.splitext(os.path.basename(output_file))[0]
-                    drum_stem_path = None
+                # Only perform segment chopping if Module 3 is enabled
+                if self.module3_enabled.get():
+                    self.status_label.config(text="Chopping stems into 8-bar segments...")
+                    self.root.update()
                     
-                    # First pass: find and store drum stem path
-                    for stem_type, path in stem_paths.items():
-                        if stem_type.lower() == 'drums':
-                            drum_stem_path = path
-                        new_name = f"{base_name}_{stem_type.lower()}.wav"
-                        new_path = os.path.join(output_folder, new_name)
-                        os.rename(path, new_path)
-                        
-                        # Update drum_stem_path to new location if it's the drum stem
-                        if path == drum_stem_path:
-                            drum_stem_path = new_path
-                    
-                    # If we found drums, separate them further
-                    if drum_stem_path:
-                        self.status_label.config(text="Separating drum components (this may take a few minutes)...")
-                        self.root.update()
-                        
-                        from step3_2_DrumSeperation import separate_drums
-                        bpm = float(self.manual_bpm.get()) if self.manual_bpm.get() else float(self.deeprhythm_bpm.get())
-                        
-                        success = separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name)
-                        if success:
-                            self.status_label.config(text=f"Processed {current_file} and separated all stems including drums")
-                        else:
-                            self.status_label.config(text=f"Processed {current_file}, but drum separation failed")
-                        self.root.update()
+                    from step4_ChopSegments8Bars import process_stems_to_segments
+                    if process_stems_to_segments(output_folder, self.update_progress):
+                        self.status_label.config(text="Successfully created 8-bar segments!")
                     else:
-                        self.status_label.config(text=f"Processed {current_file} and separated stems")
+                        self.status_label.config(text="Failed to create segments")
+                        return
                 
-                else:
-                    self.status_label.config(text="Stem separation failed")
-                
+                self.status_label.config(text=f"Completed processing {current_file}")
+            
             # Move to next file if available
             self.current_file_index += 1
             if self.current_file_index < len(self.files_to_process):
@@ -265,14 +223,7 @@ class AudioAnalysisGUI:
             else:
                 self.status_label.config(text="All files processed!")
                 
-            # Clean up temporary WAV if it exists
-            if self.temp_wav_path and os.path.exists(self.temp_wav_path):
-                os.remove(self.temp_wav_path)
-                self.temp_wav_path = None
-                
         except Exception as e:
-            if self.temp_wav_path and os.path.exists(self.temp_wav_path):
-                os.remove(self.temp_wav_path)
             self.status_label.config(text=f"Error: {str(e)}")
 
     def update_progress(self, progress, status_message=None):

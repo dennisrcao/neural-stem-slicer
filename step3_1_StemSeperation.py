@@ -1,11 +1,14 @@
 import os
 import subprocess
 from pathlib import Path
+import shutil
+import re
 
-def separate_stems(input_file, output_folder, progress_callback=None):
+def separate_stems(input_file, output_folder, progress_callback=None, prefix=''):
     """
     Separates audio into drums, bass, vocals, and other stems using Demucs v4
     progress_callback: function(progress_percent, status_text)
+    prefix: string to prepend to output filenames (e.g. "11A_120.00BPM_")
     """
     # Ensure paths are strings and absolute
     input_file = str(Path(input_file).absolute())
@@ -19,7 +22,7 @@ def separate_stems(input_file, output_folder, progress_callback=None):
         # Create output directory if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
         
-        # Use subprocess.Popen instead of run to capture output in real-time
+        # Use subprocess.Popen for demucs
         process = subprocess.Popen(
             [
                 'demucs',
@@ -47,21 +50,30 @@ def separate_stems(input_file, output_folder, progress_callback=None):
                 except ValueError:
                     pass
         
-        # Get the base name of the input file
-        base_name = Path(input_file).stem
+        # Get the base name without any existing prefix
+        input_filename = Path(input_file).stem
+        base_name = input_filename
         
         # The stems will be in a subdirectory named after the model and input file
-        stem_folder = os.path.join(output_folder, 'htdemucs', base_name)
+        temp_stem_folder = os.path.join(output_folder, 'htdemucs', Path(input_file).stem)
         
-        # Collect paths of generated stems
+        # Move and rename stems to the main output folder
         stem_paths = {}
-        if os.path.exists(stem_folder):
-            for stem_file in os.listdir(stem_folder):
+        if os.path.exists(temp_stem_folder):
+            for stem_file in os.listdir(temp_stem_folder):
                 if stem_file.endswith('.wav'):
-                    stem_name = stem_file.split('.')[0].upper()
-                    stem_path = os.path.join(stem_folder, stem_file)
-                    stem_paths[stem_name] = stem_path
-                    print(f"Found {stem_name} stem at {stem_path}")
+                    stem_type = stem_file.split('.')[0]  # drums, bass, vocals, other
+                    old_path = os.path.join(temp_stem_folder, stem_file)
+                    
+                    # Use the provided prefix for the new filename
+                    new_name = f"{prefix}{base_name}_{stem_type}.wav"
+                    new_path = os.path.join(output_folder, new_name)
+                    shutil.move(old_path, new_path)
+                    stem_paths[stem_type.upper()] = new_path
+                    print(f"Created {stem_type} stem at {new_path}")
+            
+            # Clean up the temporary folder structure
+            shutil.rmtree(os.path.dirname(temp_stem_folder))
         
         if stem_paths:
             print("\nStem separation completed successfully!")
