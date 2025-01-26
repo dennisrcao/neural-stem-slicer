@@ -3,33 +3,46 @@ import subprocess
 from pathlib import Path
 import shutil
 import re
+from concurrent.futures import ThreadPoolExecutor
+import torch
+import soundfile as sf
+import resampy
 
-def separate_stems(input_file, output_folder, progress_callback=None, prefix=''):
+def separate_stems(input_file, output_folder, progress_callback=None, prefix='', device='cpu', stems=None):
     """
-    Separates audio into drums, bass, vocals, and other stems using Demucs v4
-    progress_callback: function(progress_percent, status_text)
-    prefix: string to prepend to output filenames (e.g. "11A_120.00BPM_")
+    Separates audio into stems using Demucs v4
     """
-    # Ensure paths are strings and absolute
-    input_file = str(Path(input_file).absolute())
-    output_folder = str(Path(output_folder).absolute())
-    
-    print("\nSeparating stems...")
-    print(f"Input: {input_file}")
-    print(f"Output folder: {output_folder}")
-    
     try:
+        # Ensure paths are strings and absolute
+        input_file = str(Path(input_file).absolute())
+        output_folder = str(Path(output_folder).absolute())
+        
+        print("\nSeparating stems...")
+        print(f"Input: {input_file}")
+        print(f"Output folder: {output_folder}")
+        
         # Create output directory if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
         
-        # Use subprocess.Popen for demucs
+        # Build demucs command
+        demucs_cmd = [
+            'demucs',
+            '-n', 'htdemucs',
+            '--out', output_folder,
+            '--device', device
+        ]
+        
+        # Add stems parameter if specified
+        if stems:
+            demucs_cmd.extend(['--stems', '+'.join(stems)])
+        
+        # Add input file
+        demucs_cmd.append(input_file)
+        
+        print(f"Running command: {' '.join(demucs_cmd)}")
+        
         process = subprocess.Popen(
-            [
-                'demucs',
-                '-n', 'htdemucs',
-                '--out', output_folder,
-                input_file
-            ],
+            demucs_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True
@@ -89,4 +102,111 @@ def separate_stems(input_file, output_folder, progress_callback=None, prefix='')
         print(f"\nUnexpected error during stem separation: {e}")
         import traceback
         traceback.print_exc()
+        return None
+
+def separate_stems_multi_gpu(input_files, output_folder, num_gpus=2):
+    """
+    Process multiple files in parallel using multiple GPUs
+    """
+    def process_on_gpu(file_data):
+        file_path, gpu_id = file_data
+        torch.cuda.set_device(gpu_id)
+        return separate_stems(file_path, output_folder, device=f'cuda:{gpu_id}')
+
+    # Distribute files across GPUs
+    file_gpu_pairs = [(f, i % num_gpus) for i, f in enumerate(input_files)]
+    
+    with ThreadPoolExecutor(max_workers=num_gpus) as executor:
+        results = list(executor.map(process_on_gpu, file_gpu_pairs))
+    
+    return results
+
+def optimize_audio_for_separation(input_file):
+    """
+    Optimize audio file before separation
+    """
+    # Load audio
+    y, sr = sf.read(input_file)
+    
+    # Resample to 44.1kHz if different
+    if sr != 44100:
+        y = resampy.resample(y, sr, 44100)
+        sr = 44100
+    
+    # Convert to mono if stereo (optional, depends on your needs)
+    if len(y.shape) > 1:
+        y = y.mean(axis=1)
+    
+    # Save optimized file
+    optimized_path = input_file.replace('.wav', '_optimized.wav')
+    sf.write(optimized_path, y, sr)
+    return optimized_path
+
+def verify_gpu_setup():
+    """
+    Verify GPU setup and print diagnostics
+    """
+    print("\nChecking GPU setup...")
+    if torch.cuda.is_available():
+        print(f"GPU available: {torch.cuda.get_device_name(0)}")
+        print(f"CUDA version: {torch.version.cuda}")
+        print(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
+        print(f"Memory cached: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
+        return True
+    else:
+        print("No GPU available, using CPU")
+        return False
+
+def process_audio_optimized(input_file, output_folder):
+    """
+    Optimized audio processing pipeline with parallel drum processing
+    """
+    try:
+        print("\nStarting optimized audio processing...")
+        gpu_available = verify_gpu_setup()
+        device = 'cuda' if gpu_available else 'cpu'
+        print(f"Using device: {device}")
+        
+        # 1. Optimize input file once
+        print("Optimizing input file...")
+        optimized_file = optimize_audio_for_separation(input_file)
+        print(f"Optimized file created: {optimized_file}")
+        
+        # 2. Start parallel processing
+        print("\nStarting parallel stem separation...")
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            print("Submitting drum separation task...")
+            drum_future = executor.submit(
+                separate_stems,
+                optimized_file,
+                output_folder,
+                device=device,
+                stems=['drums']
+            )
+            
+            print("Submitting other stems separation task...")
+            other_stems_future = executor.submit(
+                separate_stems,
+                optimized_file,
+                output_folder,
+                device=device,
+                stems=['bass', 'vocals', 'other']
+            )
+            
+            print("Waiting for results...")
+            drum_paths = drum_future.result()
+            other_paths = other_stems_future.result()
+            
+            print(f"Drum paths: {drum_paths}")
+            print(f"Other paths: {other_paths}")
+        
+        # Combine results
+        all_paths = {**drum_paths, **other_paths}
+        
+        # Clean up
+        os.remove(optimized_file)
+        return all_paths
+        
+    except Exception as e:
+        print(f"Error during optimized processing: {e}")
         return None

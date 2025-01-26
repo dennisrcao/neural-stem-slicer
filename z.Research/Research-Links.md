@@ -13,3 +13,5 @@
 - [UV]( https://github.com/astral-sh/uv)
   > Fast Python package manager written in Rust
 
+- [Music Source Seperation Training] https://github.com/ZFTurbo/Music-Source-Separation-Training
+

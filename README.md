@@ -1,7 +1,10 @@
 > **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
 
 <b>TODO:</b> 
+- Ableton segmentation BPM identification: maybe we need to write the metadata into the segmented loops 
+- onset detection of the "1" beat
 - type check for manual override must be a number BPM and a camelot wheel string 
+- current implementaton takes 510.35 seconds
 
 
 # Split Stems
@@ -10,6 +13,10 @@
 ## Introduction
 Imagine a folder on your Desktop where you drag any song in, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can added to your custom loop library or be dragged into Ableton Session view to help producers generate new ideas.
 ![Summary](./README_Assets/algorithm-summary.png)
+
+
+![Ableton](./README_Assets/ableton-settings.png)
+
 
 
 Drag in...

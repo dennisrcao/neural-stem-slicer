@@ -9,9 +9,13 @@ import librosa
 from step2_KeyAnalysis import detect_key, detect_key_and_rename
 import soundfile as sf
 import shutil
+from concurrent.futures import ThreadPoolExecutor
+import time
+from datetime import datetime
 
 class AudioAnalysisGUI:
     def __init__(self):
+        self.start_time = time.time()  # Add start time tracking
         self.root = tk.Tk()
         self.root.title("Audio Analysis")
         
@@ -167,6 +171,9 @@ class AudioAnalysisGUI:
 
     def process_current_file(self):
         try:
+            # Start timing when process button is clicked
+            start_time = time.time()
+            
             current_file = self.files_to_process[self.current_file_index]
             file_path = os.path.join(os.getcwd(), current_file)
             
@@ -214,7 +221,18 @@ class AudioAnalysisGUI:
                         self.status_label.config(text="Failed to create segments")
                         return
                 
+                # After all processing is complete (just before the "Move to next file" section)
                 self.status_label.config(text=f"Completed processing {current_file}")
+            
+            # Calculate and display elapsed time
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            timing_msg = f"\nTotal Processing Time: {elapsed_time:.2f} seconds"
+            print("\n" + "=" * 30)
+            print(timing_msg)
+            print("=" * 30)
+            
+            self.status_label.config(text=f"Complete! Took {elapsed_time:.2f} seconds")
             
             # Move to next file if available
             self.current_file_index += 1
@@ -222,7 +240,7 @@ class AudioAnalysisGUI:
                 self.analyze_file(self.files_to_process[self.current_file_index])
             else:
                 self.status_label.config(text="All files processed!")
-                
+            
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
 
@@ -268,5 +286,9 @@ class AudioAnalysisGUI:
         self.root.mainloop()
 
 if __name__ == "__main__":
+    print("\n" + "=" * 30)
+    print(f"Starting processing at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 30 + "\n")
+    
     gui = AudioAnalysisGUI()
     gui.run()
