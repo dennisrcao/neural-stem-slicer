@@ -4,7 +4,7 @@
 - Ableton segmentation BPM identification: maybe we need to write the metadata into the segmented loops 
 - onset detection of the "1" beat
 - type check for manual override must be a number BPM and a camelot wheel string 
-- current implementaton takes 510.35 seconds
+- Total Processing Time: 314.87 seconds
 
 
 # Split Stems
