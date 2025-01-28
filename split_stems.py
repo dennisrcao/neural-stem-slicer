@@ -3,7 +3,7 @@ import tqdm
 import os
 import tkinter as tk
 from tkinter import ttk
-from step1_BPMAnalysis import load_and_analyze_bpm, detect_bpm
+from step1_BPMAnalysis import load_and_analyze_bpm, detect_bpm_and_downbeats
 from deeprhythm import DeepRhythmPredictor
 import librosa
 from step2_KeyAnalysis import detect_key, detect_key_and_rename
@@ -46,6 +46,7 @@ class AudioAnalysisGUI:
         # Add new variables
         self.downbeat_times = tk.StringVar()
         self.musical_context = tk.StringVar()
+        self.music_type = tk.StringVar()
         
         # Find audio files in current directory
         self.scan_directory()
@@ -164,10 +165,22 @@ class AudioAnalysisGUI:
             file_path = os.path.join(os.getcwd(), filename)
             y, sr = librosa.load(file_path)
             
-            # Current BPM detection
-            bpm, confidence = detect_bpm(y, sr, file_path)
+            # Use new comprehensive BPM detection
+            bpm, confidence, downbeats, music_type = detect_bpm_and_downbeats(y, sr, file_path)
+            
+            # Update GUI with results
             self.deeprhythm_bpm.set(f"{bpm:.2f}")
             self.deeprhythm_confidence.set(f"{confidence:.2%}")
+            self.music_type.set(music_type)
+            
+            # Now downbeats is a list, so this check works
+            if downbeats:  # or if len(downbeats) > 0:
+                downbeat_str = ", ".join([f"{t:.3f}s" for t in downbeats[:5]])
+                if len(downbeats) > 5:
+                    downbeat_str += "..."
+                self.downbeat_times.set(downbeat_str)
+            else:
+                self.downbeat_times.set("No downbeats detected")
             
             # Key Analysis
             key_results = detect_key(file_path)
@@ -177,13 +190,8 @@ class AudioAnalysisGUI:
             self.combined_key.set(f"{camelot}/{full_key}")
             self.key_confidence.set(f"{key_conf:.2f}%")
             
-            # Add display for potential downbeats
-            ttk.Label(self.module1_frame, text="Detected Downbeats:").grid(row=4, column=0, padx=5)
-            ttk.Label(self.module1_frame, textvariable=self.downbeat_times).grid(row=4, column=1, padx=5)
-            
             # Add context info
-            ttk.Label(self.module1_frame, text="Musical Context:").grid(row=5, column=0, padx=5)
-            ttk.Label(self.module1_frame, textvariable=self.musical_context).grid(row=5, column=1, padx=5)
+            self.musical_context.set(f"Detected music type: {music_type}")
             
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
