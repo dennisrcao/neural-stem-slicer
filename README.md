@@ -5,7 +5,7 @@
 
 <a href="https://buymeacoffee.com/dennisrcao" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-black.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
----
+
 
 ## Directory
 - [Overview](#overview)
@@ -15,7 +15,7 @@
   - [macOS Installation](#macos-installation)
   - [Windows Installation](#windows-installation)
 - [Usage](#usage)
----
+
 
 ## Overview
 ![Overview](./README_Assets/overview.png)
@@ -49,12 +49,9 @@ Perfect for:
 - Extract vocals and music beds for content creation
 
 
----
-
 ## Low Level Architecture
 ![Algorithm](./README_Assets/algorithm-diagram-small.png)
 
----
 
 ## Installation
 ### Prerequisites
@@ -116,6 +113,8 @@ pip install -r requirements.txt
 # Install drumsep model
 python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ```
+
+---
 
 ## Usage
 ```bash
