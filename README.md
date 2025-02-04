@@ -2,79 +2,80 @@
 
 
 > **Note:** For development details and contribution guidelines, see [Developer README](README_Dev.md)
----
 
-
-## Overview
-Transform any song into perfectly organized, production-ready stems with just a drag and drop. Neural Stem Slicer intelligently processes your audio files (`.mp3/.wav`) and automatically:
-- Splits tracks into 8 high-quality stems using neural networks 
-(bass, vocals, melody, full drums, kick, toms, snare, cymbals)
-- Detects and labels BPM and key using deep learning analysis (with manual override)
-- Segments each stem into precise 8-bar loops ready for Ableton Complex warping in Session View
-
-![Overview](./README_Assets/overview.png)
+<a href="https://buymeacoffee.com/dennisrcao" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-black.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 ---
-## Audience
-
-### Music Production & Remixing
-- Create custom loop libraries from your favorite tracks (labeled by BPM/Key)
-- Extract clean stems from vinyl rips - ready for hardware samplers or DAWs
-- Breathe new life into old project stems with perfect 8-bar segments
-- Build instant remix-ready material with neural-separated stems
-- Generate Ableton-ready warped segments for Session View experimentation
-
-### DJing & Live Performance
-- Create clean acapellas and instrumentals using AI separation
-- Extract perfectly-timed drum loops for live percussion layers
-- Build custom DJ tools with precisely isolated elements
-- Generate transition-ready segments in your library's key format
-
-### Creative & Educational
-- Break down songs into individual elements for study or practice
-- Create clean backing tracks with high-quality stem separation
-- Extract vocals and music beds for content creation
-
-Just drag in any audio:
-- Full songs you want to sample or study
-- Old project stems that need organization
-- Vinyl rips for clean separation
-
-![Summary](./README_Assets/algorithm-summary.png)
-
-
-![Ableton](./README_Assets/ableton-settings.png)
-
-
 
 ## Directory
-- [Prerequisites](#prerequisites)
+- [Overview](#overview)
+- [Low Level Architecture](#low-level-architecture)
 - [Installation](#installation)
+  - [Prerequisites](#prerequisites)
   - [macOS Installation](#macos-installation)
   - [Windows Installation](#windows-installation)
 - [Usage](#usage)
-- [High Level Summary](#high-level-summary)
-- [Low Level Architecture](#low-level-architecture)
-- [Troubleshooting](#troubleshooting)
+---
+
+## Overview
+![Overview](./README_Assets/overview.png)
+
+A music production utility tool that converts any song into perfectly organized, production-ready stems and 8 bar segments.
+
+Just drag in any audio file (`.mp3/.wav`) and Neural Stem Slicer intelligently processes and automatically:
+
+- Splits tracks into 8 high-quality stems using neural networks
+  - Bass, Vocals, Melody, Drums
+  - Drums → Kick, Snare, Toms, Cymbals
+- Detects and labels all files with BPM and key using deep learning analysis (with manual override)
+- Segments each stem into precise 8-bar loops ready for Ableton Complex warping
+<br>
+
+Perfect for:
+
+**Music Production & Sampling/Hardware**
+- Create custom loops for Ableton Session view
+- Extract clean stems for remixing and sampling
+- Build your own custom loop collections labeled by BPM/Key
+- Extract usable stems from vinyl rips
+- Load stems into hardware (samplers, drum machines, groove boxes)
+- Study arrangements by analyzing each 8 bar segment
+
+**Live Performance & DJing**
+- Generate clean acapellas and instrumentals
+- Create perfectly-timed drum loops for live layering
+- Build custom DJ tools and transition elements
+- Study arrangement and mixing techniques
+- Extract vocals and music beds for content creation
 
 
+---
 
 ## Low Level Architecture
 ![Algorithm](./README_Assets/algorithm-diagram-small.png)
 
-
-## Prerequisites
-- Python 3.11 (recommended) or Python 3.8-3.11
-- macOS (including Apple Silicon), Linux, or Windows
+---
 
 ## Installation
+### Prerequisites
+- Git ([Download Git](https://git-scm.com/downloads))
+  - macOS: `brew install git`
+  - Windows: Download installer from git-scm.com
+- Python 3.11 ([Download Python](https://www.python.org/downloads/))
+  - macOS: `brew install python@3.11`
+  - Windows: Download installer from python.org
+- macOS (including Apple Silicon), Linux, or Windows
+
+### Setup
+```bash
+# Clone repository
+git clone https://github.com/yourusername/neural-stem-slicer.git
+cd neural-stem-slicer
+```
 
 ### macOS Installation
 ```bash
-# Install Python 3.11
-brew install python@3.11
-
-# Verify installation
+# Verify Python installation
 python3.11 --version  # Should show Python 3.11.x
 
 # Create virtual environment
@@ -119,16 +120,5 @@ python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ## Usage
 ```bash
 python split_stems.py
-```
-
-## Troubleshooting
-If you need to recreate the virtual environment:
-```bash
-deactivate
-rm -rf .venv
-python3.11 -m venv .venv
-source .venv/bin/activate  # On macOS/Linux
-pip install -r requirements.txt
-python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ```
 

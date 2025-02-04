@@ -44,7 +44,7 @@ class AudioAnalysisGUI:
         self.current_progress = 0
         
         # Update base output directory
-        self.output_base = os.path.join(os.getcwd(), '_output')
+        self.output_base = os.path.join(os.getcwd(), 'output')
         os.makedirs(self.output_base, exist_ok=True)
         
         # Find audio files in current directory
@@ -291,14 +291,14 @@ class AudioAnalysisGUI:
         self.root.mainloop()
 
 def cleanup_output():
-    """Clean up _output directory if it exists"""
-    output_dir = os.path.join(os.getcwd(), '_output')
+    """Clean up output directory if it exists"""
+    output_dir = os.path.join(os.getcwd(), 'output')
     if os.path.exists(output_dir):
         try:
             shutil.rmtree(output_dir)
-            print("Cleaned up _output directory")
+            print("Cleaned up output directory")
         except Exception as e:
-            print(f"Error cleaning up _output directory: {e}")
+            print(f"Error cleaning up output directory: {e}")
 
 if __name__ == "__main__":
     print("\n" + "=" * 30)
