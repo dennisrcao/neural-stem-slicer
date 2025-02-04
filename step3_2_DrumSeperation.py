@@ -6,8 +6,6 @@ import librosa
 import numpy as np
 import shutil
 import time
-import torch
-from demucs.hdemucs import HDemucs
 
 def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
     """
@@ -55,26 +53,20 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         
         try:
             print("\nStarting drum separation subprocess...")
-            # Add environment variable to control model loading
-            env = os.environ.copy()
-            env['PYTORCH_WEIGHTS_ONLY'] = 'False'
-            
-            # Run drumsep with modified environment
             start_time = time.time()
-            process = subprocess.Popen(
-                [drumsep_script, drum_stem_path, drums_output],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=env
-            )
             
-            # Wait for the process to complete
-            stdout, stderr = process.communicate()
+            # Run the separation using the bash script directly on the drum stem
+            process = subprocess.run([
+                'bash',
+                drumsep_script,
+                drum_stem_path,
+                drums_output
+            ], check=True, capture_output=True, text=True)
             
             print(f"Separation completed in {time.time() - start_time:.2f} seconds")
-            if stderr:
+            if process.stderr:
                 print("Subprocess stderr output:")
-                print(stderr.decode('utf-8'))
+                print(process.stderr)
             
         finally:
             os.chdir(original_dir)
@@ -91,22 +83,13 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         print(f"\nFound separated parts in: {parts_folder}")
         print("Contents:", os.listdir(parts_folder))
         
-        # Add debug logging for the actual files we get from drumsep
-        print("\nDrumsep Output Files:")
-        for file in os.listdir(parts_folder):
-            print(f"- {file}")
-            
-        # Define the drum components mapping (this is correct according to documentation)
+        # Define the drum components mapping
         drum_parts = {
-            'bombo': 'kick',       # Spanish for "bass drum"
-            'redoblante': 'snare', # Spanish for "snare drum"
-            'platillos': 'cymbals',# Spanish for "cymbals"
-            'toms': 'toms'         # Same in both languages
+            'bombo': 'kick',
+            'redoblante': 'snare',
+            'platillos': 'cymbals',
+            'toms': 'toms'
         }
-        
-        print("\nProcessing components with mapping:")
-        for spanish, english in drum_parts.items():
-            print(f"- {spanish} → {english}")
         
         print("\nProcessing individual components:")
         # Process each component
@@ -145,28 +128,6 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
                          subtype=orig_info.subtype,
                          format=orig_info.format)
                 print(f"  Saved WAV file: {new_path}")
-                
-                # Add frequency analysis for verification
-                print(f"\nAnalyzing frequencies for {new_type}:")
-                y, sr = librosa.load(old_path, sr=sr_orig, mono=True)
-                
-                # Get the spectral centroid
-                cent = librosa.feature.spectral_centroid(y=y, sr=sr)
-                avg_cent = cent.mean()
-                
-                # Get peak frequencies
-                spec = np.abs(librosa.stft(y))
-                freqs = librosa.fft_frequencies(sr=sr)
-                peak_freq = freqs[spec.mean(axis=1).argmax()]
-                
-                print(f"  Average spectral centroid: {avg_cent:.1f} Hz")
-                print(f"  Peak frequency: {peak_freq:.1f} Hz")
-                
-                # Typical ranges:
-                # Kick: 40-100 Hz
-                # Snare: 200-400 Hz
-                # Toms: 100-300 Hz
-                # Cymbals: 3000+ Hz
         
         # Clean up temporary files
         print("\nCleaning up temporary files...")
@@ -179,15 +140,3 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         import traceback
         traceback.print_exc()
         return False
-
-def load_drumsep_model(model_path):
-    """Helper function to load drumsep model with proper settings"""
-    try:
-        # Add HDemucs to safe globals
-        torch.serialization.add_safe_globals([HDemucs])
-        
-        # Load model with weights_only=False
-        return torch.load(model_path, weights_only=False)
-    except Exception as e:
-        print(f"Error loading drumsep model: {e}")
-        raise

@@ -121,3 +121,7 @@ python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 python split_stems.py
 ```
 
+![gui](./README_Assets/algorithm-diagram-small.png)
+
+
+

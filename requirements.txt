@@ -1,10 +1,11 @@
 # Core dependencies
-demucs>=4.0.0
-torch>=2.0.0
+demucs==4.0.0
+torch==2.0.0  # First version supporting Python 3.11
+torchaudio==2.0.0  # Match torch version
+numpy==1.24.3  # Pin to last 1.x version
 librosa>=0.10.0
 soundfile>=0.12.1
 resampy>=0.4.2
-numpy>=1.24.0
 
 # Deep learning models
 deeprhythm
