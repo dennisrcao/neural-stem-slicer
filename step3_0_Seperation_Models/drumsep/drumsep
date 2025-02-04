@@ -5,11 +5,38 @@ fi
 input=${1}
 output=${2}
 shopt -s nullglob
+
+# Create a Python script to handle model loading with proper settings
+cat > load_model.py << 'EOF'
+import torch
+from demucs.hdemucs import HDemucs
+from torch.serialization import safe_globals
+import sys
+
+def load_model():
+	try:
+		# Add HDemucs to safe globals
+		torch.serialization.add_safe_globals([HDemucs])
+		with safe_globals([HDemucs]):
+			return torch.load(sys.argv[1], weights_only=False)
+	except Exception as e:
+		print(f"Error loading model: {e}", file=sys.stderr)
+		sys.exit(1)
+
+if __name__ == "__main__":
+	load_model()
+EOF
+
+# Process files
 if [ -d "$1" ]; then
 	for file in $input/*.{mp3,wav,ogg,flac}; do 
-    		demucs --repo "model" -o "$output" -n 49469ca8 "$file"
+		PYTHONPATH="$PWD" demucs --repo "model" -o "$output" -n 49469ca8 "$file"
 	done
 else
-	demucs --repo "model" -o "$output" -n 49469ca8 "$input"
+	PYTHONPATH="$PWD" demucs --repo "model" -o "$output" -n 49469ca8 "$input"
 fi
+
+# Clean up temporary script
+rm -f load_model.py
+
 exit 0

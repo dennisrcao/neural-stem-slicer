@@ -24,7 +24,7 @@ A music production utility tool that converts any song into perfectly organized,
 
 Just drag in any audio file (`.mp3/.wav`) and Neural Stem Slicer intelligently processes and automatically:
 
-- Splits tracks into 8 high-quality stems using neural networks
+- Splits tracks into 8 high-quality stems using Demucs Hybrid Transformers
   - Bass, Vocals, Melody, Drums
   - Drums → Kick, Snare, Toms, Cymbals
 - Detects and labels all files with BPM and key using deep learning analysis (with manual override)

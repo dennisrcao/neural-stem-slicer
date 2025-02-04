@@ -6,6 +6,8 @@ import librosa
 import numpy as np
 import shutil
 import time
+import torch
+from demucs.hdemucs import HDemucs
 
 def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
     """
@@ -53,20 +55,26 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         
         try:
             print("\nStarting drum separation subprocess...")
-            start_time = time.time()
+            # Add environment variable to control model loading
+            env = os.environ.copy()
+            env['PYTORCH_WEIGHTS_ONLY'] = 'False'
             
-            # Run the separation using the bash script directly on the drum stem
-            process = subprocess.run([
-                'bash',
-                drumsep_script,
-                drum_stem_path,
-                drums_output
-            ], check=True, capture_output=True, text=True)
+            # Run drumsep with modified environment
+            start_time = time.time()
+            process = subprocess.Popen(
+                [drumsep_script, drum_stem_path, drums_output],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env
+            )
+            
+            # Wait for the process to complete
+            stdout, stderr = process.communicate()
             
             print(f"Separation completed in {time.time() - start_time:.2f} seconds")
-            if process.stderr:
+            if stderr:
                 print("Subprocess stderr output:")
-                print(process.stderr)
+                print(stderr.decode('utf-8'))
             
         finally:
             os.chdir(original_dir)
@@ -171,3 +179,15 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         import traceback
         traceback.print_exc()
         return False
+
+def load_drumsep_model(model_path):
+    """Helper function to load drumsep model with proper settings"""
+    try:
+        # Add HDemucs to safe globals
+        torch.serialization.add_safe_globals([HDemucs])
+        
+        # Load model with weights_only=False
+        return torch.load(model_path, weights_only=False)
+    except Exception as e:
+        print(f"Error loading drumsep model: {e}")
+        raise
