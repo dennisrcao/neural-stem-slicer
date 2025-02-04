@@ -43,6 +43,10 @@ class AudioAnalysisGUI:
         # Add progress tracking variable
         self.current_progress = 0
         
+        # Update base output directory
+        self.output_base = os.path.join(os.getcwd(), '_output')
+        os.makedirs(self.output_base, exist_ok=True)
+        
         # Find audio files in current directory
         self.scan_directory()
         self.setup_gui()
@@ -184,13 +188,14 @@ class AudioAnalysisGUI:
             # Create the key/BPM prefix
             prefix = f"{camelot_key}_{bpm:.2f}BPM_"
             
+            # Update output folder paths
+            output_folder = os.path.join(self.output_base, 'stems')
+            os.makedirs(output_folder, exist_ok=True)
+            
             # Only perform stem separation if Module 2 is enabled
             if self.module2_enabled.get():
                 self.status_label.config(text="Starting stem separation...")
                 self.root.update()
-                
-                output_folder = os.path.join(os.getcwd(), 'output', 'stems')
-                os.makedirs(output_folder, exist_ok=True)
                 
                 stem_paths = separate_stems(file_path, output_folder, 
                                          progress_callback=self.update_progress,
@@ -284,6 +289,16 @@ class AudioAnalysisGUI:
 
     def run(self):
         self.root.mainloop()
+
+def cleanup_output():
+    """Clean up _output directory if it exists"""
+    output_dir = os.path.join(os.getcwd(), '_output')
+    if os.path.exists(output_dir):
+        try:
+            shutil.rmtree(output_dir)
+            print("Cleaned up _output directory")
+        except Exception as e:
+            print(f"Error cleaning up _output directory: {e}")
 
 if __name__ == "__main__":
     print("\n" + "=" * 30)

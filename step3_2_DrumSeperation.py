@@ -83,13 +83,22 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
         print(f"\nFound separated parts in: {parts_folder}")
         print("Contents:", os.listdir(parts_folder))
         
-        # Define the drum components mapping
+        # Add debug logging for the actual files we get from drumsep
+        print("\nDrumsep Output Files:")
+        for file in os.listdir(parts_folder):
+            print(f"- {file}")
+            
+        # Define the drum components mapping (this is correct according to documentation)
         drum_parts = {
-            'bombo': 'kick',
-            'redoblante': 'snare',
-            'platillos': 'cymbals',
-            'toms': 'toms'
+            'bombo': 'kick',       # Spanish for "bass drum"
+            'redoblante': 'snare', # Spanish for "snare drum"
+            'platillos': 'cymbals',# Spanish for "cymbals"
+            'toms': 'toms'         # Same in both languages
         }
+        
+        print("\nProcessing components with mapping:")
+        for spanish, english in drum_parts.items():
+            print(f"- {spanish} → {english}")
         
         print("\nProcessing individual components:")
         # Process each component
@@ -128,6 +137,28 @@ def separate_drums(drum_stem_path, output_folder, camelot_key, bpm, base_name):
                          subtype=orig_info.subtype,
                          format=orig_info.format)
                 print(f"  Saved WAV file: {new_path}")
+                
+                # Add frequency analysis for verification
+                print(f"\nAnalyzing frequencies for {new_type}:")
+                y, sr = librosa.load(old_path, sr=sr_orig, mono=True)
+                
+                # Get the spectral centroid
+                cent = librosa.feature.spectral_centroid(y=y, sr=sr)
+                avg_cent = cent.mean()
+                
+                # Get peak frequencies
+                spec = np.abs(librosa.stft(y))
+                freqs = librosa.fft_frequencies(sr=sr)
+                peak_freq = freqs[spec.mean(axis=1).argmax()]
+                
+                print(f"  Average spectral centroid: {avg_cent:.1f} Hz")
+                print(f"  Peak frequency: {peak_freq:.1f} Hz")
+                
+                # Typical ranges:
+                # Kick: 40-100 Hz
+                # Snare: 200-400 Hz
+                # Toms: 100-300 Hz
+                # Cymbals: 3000+ Hz
         
         # Clean up temporary files
         print("\nCleaning up temporary files...")

@@ -79,8 +79,11 @@ def chop_stems_to_segments(stems_folder, crossfade_samples=0):
                 
                 segment = y[start_sample:end_sample]
                 
-                # Save with identical format as input
-                output_path = os.path.join(segments_folder, f"B{i+1}_{stem_file}")
+                # Calculate actual starting bar number (1, 9, 17, etc.)
+                starting_bar = (i * 8) + 1
+                
+                # Save with bar number indicating actual starting position
+                output_path = os.path.join(segments_folder, f"B{starting_bar}_{stem_file}")
                 sf.write(output_path, segment, sr, 
                         subtype=info.subtype,
                         format=info.format)

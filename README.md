@@ -1,17 +1,45 @@
-> **Still in development**  - this has been an independent project of mine for months if you're interested in helping out - hit me up : )
-
-<b>TODO:</b> 
-- Ableton segmentation BPM identification: maybe we need to write the metadata into the segmented loops 
-- onset detection of the "1" beat
-- type check for manual override must be a number BPM and a camelot wheel string 
-- Total Processing Time: 314.87 seconds
+# Neural Stem Slicer
 
 
-# Split Stems
+> **Note:** For development details and contribution guidelines, see [Developer README](README_Dev.md)
 ---
 
-## Introduction
-Imagine a folder on your Desktop where you drag any song in, then double click a command file and out comes stems segmented into 8 bar segments that are prefixed by BPM, key and can added to your custom loop library or be dragged into Ableton Session view to help producers generate new ideas.
+
+## Overview
+Transform any song into perfectly organized, production-ready stems with just a drag and drop. Neural Stem Slicer intelligently processes your audio files (`.mp3/.wav`) and automatically:
+- Splits tracks into 8 high-quality stems using neural networks 
+(bass, vocals, melody, full drums, kick, toms, snare, cymbals)
+- Detects and labels BPM and key using deep learning analysis (with manual override)
+- Segments each stem into precise 8-bar loops ready for Ableton Complex warping in Session View
+
+![Overview](./README_Assets/overview.png)
+
+---
+## Audience
+
+### Music Production & Remixing
+- Create custom loop libraries from your favorite tracks (labeled by BPM/Key)
+- Extract clean stems from vinyl rips - ready for hardware samplers or DAWs
+- Breathe new life into old project stems with perfect 8-bar segments
+- Build instant remix-ready material with neural-separated stems
+- Generate Ableton-ready warped segments for Session View experimentation
+
+### DJing & Live Performance
+- Create clean acapellas and instrumentals using AI separation
+- Extract perfectly-timed drum loops for live percussion layers
+- Build custom DJ tools with precisely isolated elements
+- Generate transition-ready segments in your library's key format
+
+### Creative & Educational
+- Break down songs into individual elements for study or practice
+- Create clean backing tracks with high-quality stem separation
+- Extract vocals and music beds for content creation
+
+Just drag in any audio:
+- Full songs you want to sample or study
+- Old project stems that need organization
+- Vinyl rips for clean separation
+
 ![Summary](./README_Assets/algorithm-summary.png)
 
 
@@ -19,53 +47,81 @@ Imagine a folder on your Desktop where you drag any song in, then double click a
 
 
 
-Drag in...
-- Full songs you like
-- Personal stems (breath life into old song stems)
-- Vinyl rips
+## Directory
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+  - [macOS Installation](#macos-installation)
+  - [Windows Installation](#windows-installation)
+- [Usage](#usage)
+- [High Level Summary](#high-level-summary)
+- [Low Level Architecture](#low-level-architecture)
+- [Troubleshooting](#troubleshooting)
 
 
-## Algorithm Architecture
+
+## Low Level Architecture
 ![Algorithm](./README_Assets/algorithm-diagram-small.png)
 
 
-#### Prerequisites
+## Prerequisites
 - Python 3.11 (recommended) or Python 3.8-3.11
 - macOS (including Apple Silicon), Linux, or Windows
 
+## Installation
+
+### macOS Installation
 ```bash
+# Install Python 3.11
 brew install python@3.11
-```
 
-Verify the installation:
-```bash
+# Verify installation
 python3.11 --version  # Should show Python 3.11.x
-```
 
-#### Set Up Virtual Environment
-```bash
 # Create virtual environment
 python3.11 -m venv .venv
+
 # Activate virtual environment
-source .venv/bin/activate  # On macOS/Linux
-# OR
-.venv\Scripts\activate  # On Windows
+source .venv/bin/activate
+
 # Install dependencies
 pip install -r requirements.txt
-# Brew install the tkinter for 3.11
+
+# Install tkinter for Python 3.11
 brew install python-tk@3.11
+
 # Install drumsep model
 python step3_0_Seperation_Models/drumsep/drumsepInstall.py
+
 # Make it executable
 chmod +x step3_0_Seperation_Models/drumsep/drumsep
-
 ```
 
+### Windows Installation
+```bash
+# Install Python 3.11 from python.org
+
+# Verify installation
+python --version  # Should show Python 3.11.x
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment
+.venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install drumsep model
+python step3_0_Seperation_Models/drumsep/drumsepInstall.py
+```
+
+## Usage
 ```bash
 python split_stems.py
 ```
 
-### Troubleshooting
+## Troubleshooting
 If you need to recreate the virtual environment:
 ```bash
 deactivate
