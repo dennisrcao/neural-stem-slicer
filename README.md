@@ -117,11 +117,24 @@ python step3_0_Seperation_Models/drumsep/drumsepInstall.py
 ---
 
 ## Usage
+After you've finished the setup installation process, you can either double click the file `split_stems.command` or in your terminal  run 
 ```bash
 python split_stems.py
 ```
 
-![gui](./README_Assets/algorithm-diagram-small.png)
+This should bring up the GUI which I may get rid tbh. 
+
+![gui](./README_Assets/gui.png)
+
+For now you can select which steps/modules it goes through with the checkboxes. 
+
+**Module 1**: I calculate the BPM and Key, if they are incorrect you can enter in a value into the Manual Override box
+
+**Module 2**: Stem Seperation - 8 stage demucs stem seperation. 
+
+**Module 3**: Segmentation - Chops each 8 step into perfect 8 bar segments (based on knowing the correct BPM). 
+❗**Currently you need to export your song starting right at the "1" beat as I'm still in the process of implementing on beat detection**
+
 
 
 
