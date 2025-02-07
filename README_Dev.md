@@ -13,8 +13,7 @@
 
 --- 
 ## TODO List
-- Ableton segmentation BPM identification: maybe we need to write the metadata into the segmented loops 
-- Onset detection of the "1" beat - maybe include GUI with waveform at top with spacebar control (playpause) + waveform zoom in/out
+- Onset detection of the "1" beat - maybe include GUI with waveform at top with spacebar control (playpause) + waveform zoom in/out, we store timestamp, so user can decide on the "1" 
 - Type check for manual override must be a number BPM and a camelot wheel string 
 - Total Processing Time: 314.87 seconds
 
