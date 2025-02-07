@@ -13,6 +13,7 @@ ENV/
 output/
 *.th
 step3_0_Seperation_Models/drumsep/model/*.th
+z.TestSongs/
 
 # OS specific
 .DS_Store

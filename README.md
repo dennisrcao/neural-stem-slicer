@@ -9,6 +9,7 @@
 
 ## Directory
 - [Overview](#overview)
+- [Quick Start](#quick-start)
 - [Low Level Architecture](#low-level-architecture)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
@@ -20,15 +21,18 @@
 ## Overview
 ![Overview](./README_Assets/overview.png)
 
-A music production utility tool that converts any song into perfectly organized, production-ready stems and 8 bar segments.
+A music production utility tool that converts any song into perfectly organized, production-ready stems (bass, vocal, other(melodic), drums, kick, snare, tom, cymbal) and segments each stem into 8 bar segments. Create perfect complex warping loops for Ableton Session view or just custom experimental loops for your library.
 
-Just drag in any audio file (`.mp3/.wav`) and Neural Stem Slicer intelligently processes and automatically:
-
-- Splits tracks into 8 high-quality stems using Demucs Hybrid Transformers
-  - Bass, Vocals, Melody, Drums
-  - Drums → Kick, Snare, Toms, Cymbals
-- Detects and labels all files with BPM and key using deep learning analysis (with manual override)
-- Segments each stem into precise 8-bar loops ready for Ableton Complex warping
+## Quick Start
+1. After [installation](#installation), place any `.mp3` or `.wav` file in the root folder
+2. Double click `split_stems.command` to run the process
+3. Neural Stem Slicer will automatically:
+   - Split tracks into 8 high-quality stems using Demucs Hybrid Transformers
+     - Bass, Vocals, Melody, Drums
+     - Drums → Kick, Snare, Toms, Cymbals
+   - Detect and label all files with BPM and key using deep learning analysis (with manual override)
+   - Segment each stem into precise 8-bar loops ready for Ableton Complex warping
+4. All output files should be in the `/output` folder
 <br>
 
 Perfect for:
