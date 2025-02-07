@@ -66,7 +66,7 @@ Perfect for:
 ### Setup
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/neural-stem-slicer.git
+git clone https://github.com/dennisrcao/neural-stem-slicer.git
 cd neural-stem-slicer
 ```
 
