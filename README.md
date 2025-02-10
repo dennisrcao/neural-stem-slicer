@@ -4,6 +4,7 @@
 > **Note:** For development details and contribution guidelines, see [Developer README](README_Dev.md)
 
 <a href="https://buymeacoffee.com/dennisrcao" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-black.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+<br> **If you find this program useful please consider donating, currently looking for full time work so anything helps thanks!**</br>
 
 
 
@@ -16,12 +17,23 @@
   - [macOS Installation](#macos-installation)
   - [Windows Installation](#windows-installation)
 - [Usage](#usage)
+- [Updating](#updating)
 
 
 ## Overview
 ![Overview](./README_Assets/overview.png)
 
-A music production utility tool that converts any song into perfectly organized, production-ready stems (bass, vocal, other(melodic), drums, kick, snare, tom, cymbal) and segments each stem into 8 bar segments. Create perfect complex warping loops for Ableton Session view or just custom experimental loops for your library.
+A music production tool / powerful folder that converts any song into 8 stems (bass, vocal, other(melodic), drums, kick, snare, tom, cymbal) labeled by BPM and Key, and then each stem into into 8 bar segments.
+
+```
+          ┌─────────────────-─┐       ┌─────────────────────┐      ┌─────────────────────┐
+          │ Module 1          │       │  Module 2           │      │   Module 3          │
+ Song ──> │ BPM Key Analysis  │  ──>  │  8 Stem Separation  │ ──>  │  8-Bar Segments     │  ──> Segments/Stems  
+          │ (DeepRhythm)      │       │  (2 stage Demucs)   │      │  (SoundFile)        │
+          │ (Librosa)         │       │                     │      │                     │
+          └─────────────────-─┘       └─────────────────────┘      └─────────────────────┘
+```
+
 
 ## Quick Start
 1. After [installation](#installation), place any `.mp3` or `.wav` file in the root folder
@@ -55,6 +67,8 @@ Perfect for:
 
 ## Low Level Architecture
 ![Algorithm](./README_Assets/algorithm-diagram-small.png)
+
+---
 
 
 ## Installation
@@ -138,6 +152,17 @@ For now you can select which steps/modules it goes through with the checkboxes.
 
 **Module 3**: Segmentation - Chops each 8 step into perfect 8 bar segments (based on knowing the correct BPM). 
 ❗**Currently you need to export your song starting right at the "1" beat as I'm still in the process of implementing on beat detection**
+
+---
+
+## Updating
+I will occasionally be pushing updates to this repository, to make sure you have the latest version follow the steps:
+```
+# cd into the project repo
+cd neural-stem-slicer
+# pull down latest changes
+git pull origin main
+```
 
 
 
