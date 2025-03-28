@@ -3,8 +3,11 @@
 
 > **Note:** For development details and contribution guidelines, see [Developer README](README_Dev.md)
 
-<a href="https://buymeacoffee.com/dennisrcao" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-black.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-<br> **If you find this program useful please consider donating, currently looking for full time work so anything helps thanks!**</br>
+<a href="https://www.paypal.me/onechildpolicy" target="_blank">
+  <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg" alt="Donate with PayPal" />
+</a>
+<br> 
+**If you find this program useful please consider donating, currently looking for full time work so anything helps thanks!**</br>
 
 
 
