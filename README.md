@@ -4,8 +4,11 @@
 > **Note:** For development details and contribution guidelines, see [Developer README](README_Dev.md)
 
 <a href="https://www.paypal.me/onechildpolicy" target="_blank">
-  <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg" alt="Donate with PayPal" />
+  <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg" alt="Donate with PayPal" style="height:40px;"/>
+  
 </a>
+
+
 <br> 
 **If you find this program useful please consider donating, currently looking for full time work so anything helps thanks!**</br>
 
